@@ -1,0 +1,29 @@
+# Argo CD, chart argo-cd 10.11.6 (app v3.5.6), one instance per cluster. Pinned in bootstrap.sh.
+# Small, no public exposure: reach the UI with `kubectl port-forward svc/argocd-server -n argocd 8080:80`.
+global:
+  nodeSelector:
+    agentpool: work
+configs:
+  params:
+    server.insecure: "true"          # TLS is terminated by the port-forward; no public endpoint
+  cm:
+    timeout.reconciliation: 60s
+redis-ha:
+  enabled: false
+controller:
+  replicas: 1
+  resources: {requests: {cpu: 250m, memory: 512Mi}, limits: {memory: 1Gi}}
+server:
+  replicas: 1
+  service: {type: ClusterIP}
+  resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {memory: 256Mi}}
+repoServer:
+  replicas: 1
+  resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {memory: 512Mi}}
+applicationSet:
+  replicas: 1
+  resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {memory: 128Mi}}
+dex:
+  enabled: false                     # admin login only for the PoD; Entra ID SSO is out of scope here
+notifications:
+  enabled: false
