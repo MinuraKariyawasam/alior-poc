@@ -72,6 +72,24 @@ commit, push, then apply (ground rule 12).
 7. `infra/azure/frontdoor.sh`: Front Door Premium + WAF with both gateway public IPs as origins. Only now, because it bills from creation. **Done 2026-10-30**: profile `pod-afd`, endpoint `https://pod-api-guf3bbbjh5htgxfu.a02.azurefd.net`, origins 74.153.35.38 (A) and 132.220.139.111 (B) with the registered vhost as Host header, HTTPS-only route, WAF `podwaf` with OWASP DRS 2.1 + Bot Manager 1.1 in prevention mode. Billing started today.
 8. Gate: an API published in the control plane answers through Front Door from both regions. Then phase 3. **2026-10-30**: `tests/gate.sh` publishes `accounts` (from `apis/accounts/openapi.yaml`) to both gateways; both answer 200 directly. **Gate passed 2026-10-30**: 200 from both gateways directly and through Front Door (`https://pod-api-guf3bbbjh5htgxfu.a02.azurefd.net/accounts/1.0.0/accounts`), WAF blocks an injection payload with 403 (PoD 1.3), HTTP redirects to HTTPS with 307. Front Door forwards to the gateways over HTTP 8080 inside Azure (decision, see CLAUDE.md); its config changes took 30 to 45 minutes to propagate. Phase 3 can start.
 
+## Exposure through Front Door (decided 2026-10-30)
+
+Everything reachable by people goes through Front Door; nothing is meant to be opened on a cluster IP directly.
+
+| What | Front Door endpoint | Origin | Notes |
+|---|---|---|---|
+| APIs (both gateways) | `pod-api-guf3bbbjh5htgxfu.a02.azurefd.net` | gateway runtimes, HTTP 8080 | WAF `podwaf` Prevention (OWASP DRS 2.1 + Bot Manager) |
+| API Manager portals + region A Argo CD (`/argocd`) | `pod-cp-eccmfmahgkevcqcy.a02.azurefd.net` | `pod-a-alior.polandcentral.cloudapp.azure.com`, HTTPS 443 | WAF `podwafui` Detection first |
+| Region B Argo CD (`/argocd`) | `pod-ops-b-a3graqbqf9dvcxe8.a02.azurefd.net` | `pod-b-alior.westeurope.cloudapp.azure.com`, HTTPS 443 | same |
+
+How the pieces fit:
+
+- Each cluster has a static public IP in the resource group with an Azure DNS label (`pod-<r>-ingress-ip`, build.sh); the cluster identities hold Network Contributor on the resource group to use it.
+- ingress-nginx 4.15.1 (Argo app `ingress-nginx`) terminates TLS on that IP. cert-manager's `ClusterIssuer letsencrypt` (HTTP-01, Argo app `ingress-issuer`) issues a certificate for the cloudapp name into Secret `origin-tls` through the `origin-tls` Ingress. Port 80 on the ingress IP must stay open for validation.
+- Front Door validates the origin certificate by SNI against the cloudapp name, but sends the endpoint host as the HTTP Host header. So the routing rules match the Front Door host: the API Manager chart ingress (`kubernetes.ingress.management.hostname`) and Argo CD's ingress (`server.ingress.hostname`, path `/argocd`, `server.rootpath`) both use it. The APIM chart writes that hostname into `[server] hostname` and every portal URL, which is why the Front Door host, not the cloudapp name, has to be the value.
+- `infra/azure/frontdoor-ui.sh endpoints` creates the endpoints first (their names are needed in the values); `frontdoor-ui.sh all` adds origin groups, routes and the UI WAF once the certificates are issued.
+- Last step: NSG rules so the gateway and ingress IPs accept 443/8080/8443 only from the `AzureFrontDoor.Backend` service tag (80 stays open for Let's Encrypt).
+
 ## What the bank sees in PoD 2.3
 
 - UI path: publish an API in the APIM portal, call it through Front Door, both regions answer.
