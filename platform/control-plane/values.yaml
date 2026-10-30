@@ -28,6 +28,8 @@ wso2:
           url: "jdbc:postgresql://10.10.17.4:5432/apim_shared"
           username: apim
 kubernetes:
+  gatewayAPI:
+    enabled: false                       # chart default is on; it would render HTTPRoutes. Exposure is the internal LB below
   # Mount the Key Vault provider class so the CSI driver creates/refreshes the apim-secrets Secret
   extraVolumes:
     - name: kv-secrets
