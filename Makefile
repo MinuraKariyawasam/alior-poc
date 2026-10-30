@@ -1,4 +1,4 @@
-.PHONY: quota infra idle resume destroy argocd argocd-status frontdoor gate
+.PHONY: quota infra idle resume destroy argocd argocd-status frontdoor frontdoor-ui lockdown gate
 quota:   ; @for r in polandcentral westeurope; do echo "== $$r"; az vm list-usage -l $$r -o table | grep -E "Total Regional vCPUs|Standard DSv5|Standard BS"; done
 infra:   ; bash infra/azure/build.sh
 idle:    ; bash infra/azure/scale.sh idle
@@ -8,3 +8,5 @@ argocd:  ; bash platform/argocd/bootstrap.sh a && bash platform/argocd/bootstrap
 argocd-status: ; @for c in pod-a-aks pod-b-aks; do echo "== $$c"; kubectl --context $$c -n argocd get applications; done
 frontdoor: ; bash infra/azure/frontdoor.sh
 gate:      ; bash tests/gate.sh
+frontdoor-ui: ; bash infra/azure/frontdoor-ui.sh all
+lockdown:  ; bash infra/azure/lockdown.sh
