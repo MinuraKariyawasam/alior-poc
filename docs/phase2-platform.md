@@ -69,7 +69,7 @@ commit, push, then apply (ground rule 12).
 4. `platform/control-plane/`: APIM 4.7 values for region A, DB pointed at `pod-a-db`, node selector `wso2cp` (taint removed: the chart has no tolerations). Argo CD syncs it as a multi-source app from the official chart. **In progress 2026-10-30**: schema loaded, app synced, pod starting.
 5. `platform/gateway/region-a/` and `region-b/`: gateway operator 0.11.4 (Argo app `gateway-operator`, installed), cert-manager v1.19.1 (installed), AES key Secrets (`secrets.sh`, done), `APIGateway` CRs + value overlays (pushed), registration (`register.sh`, after APIM is up), then the `gateway` Argo apps.
 6. `platform/observability/`: collector in both, stack in A.
-7. `infra/azure/frontdoor.sh`: Front Door Premium + WAF with both gateway public IPs as origins. Only now, because it bills from creation.
+7. `infra/azure/frontdoor.sh`: Front Door Premium + WAF with both gateway public IPs as origins. Only now, because it bills from creation. **Done 2026-10-30**: profile `pod-afd`, endpoint `https://pod-api-guf3bbbjh5htgxfu.a02.azurefd.net`, origins 74.153.35.38 (A) and 132.220.139.111 (B) with the registered vhost as Host header, HTTPS-only route, WAF `podwaf` with OWASP DRS 2.1 + Bot Manager 1.1 in prevention mode. Billing started today.
 8. Gate: an API published in the control plane answers through Front Door from both regions. Then phase 3.
 
 ## What the bank sees in PoD 2.3
