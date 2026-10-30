@@ -83,6 +83,9 @@ unset PGPASS
 log "apim admin password in key vault (consumed by the chart via existingSecret)"
 az keyvault secret show --vault-name $KV -n apim-admin-password -o none 2>/dev/null || \
   az keyvault secret set --vault-name $KV -n apim-admin-password --value "$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-20)" -o none
+# symmetric encryption key for APIM's internal crypto provider (128-bit hex). Never rotate casually: encrypted data would be unreadable.
+az keyvault secret show --vault-name $KV -n apim-encryption-key -o none 2>/dev/null || \
+  az keyvault secret set --vault-name $KV -n apim-encryption-key --value "$(openssl rand -hex 16)" -o none
 
 log "legacy backend vm (region B, private only)"
 exists vm show -g $RG -n pod-b-vm || az vm create -g $RG -n pod-b-vm -l $LOC_B --image Ubuntu2404 --size Standard_B1ms \

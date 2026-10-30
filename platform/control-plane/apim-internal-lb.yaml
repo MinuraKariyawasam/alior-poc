@@ -1,0 +1,17 @@
+# Private IP for the control plane inside pod-a-vnet, reachable from pod-b-aks over the peering.
+# Gateways in both regions use this as the control plane host (port 9443). Not exposed to the internet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: apim-internal
+  namespace: wso2-cp
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    deployment: apim-wso2am-all-in-one-am
+  ports:
+    - name: https
+      port: 9443
+      targetPort: 9443

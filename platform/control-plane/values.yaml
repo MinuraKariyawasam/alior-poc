@@ -1,0 +1,42 @@
+# WSO2 API Manager 4.7.0 all-in-one, region A only. Chart: github.com/wso2/helm-apim branch 4.7.x, all-in-one (4.7.0-5).
+# Argo CD renders this with that chart (multi-source Application in platform/argocd/region-a/control-plane.yaml).
+wso2:
+  deployment:
+    image:
+      registry: podacralior.azurecr.io      # public wso2/wso2am:4.7.0 + PostgreSQL JDBC driver, built by platform/control-plane/image
+      repository: wso2am
+      tag: 4.7.0-pg1
+    nodeSelector:
+      agentpool: wso2cp                      # its own node; the chart has no tolerations, so the pool is untainted
+  apim:
+    configurations:
+      gatewayType: "Regular,APK,AWS,Azure,Kong,APIPlatform"   # APIPlatform makes Platform Gateways visible in the Publisher
+      existingSecret:                        # Kubernetes Secret synced from Key Vault by platform/secrets/region-a
+        secretName: apim-secrets
+        adminPasswordKey: adminPassword
+        apimDBPasswordKey: apimDBPassword
+        sharedDBPasswordKey: sharedDBPassword
+        encryptionKeyKey: encryptionKey
+      databases:
+        type: postgres
+        jdbc:
+          driver: org.postgresql.Driver
+        apim_db:
+          url: "jdbc:postgresql://10.10.17.4:5432/apim"            # pod-a-db
+          username: apim
+        shared_db:
+          url: "jdbc:postgresql://10.10.17.4:5432/apim_shared"
+          username: apim
+kubernetes:
+  # Mount the Key Vault provider class so the CSI driver creates/refreshes the apim-secrets Secret
+  extraVolumes:
+    - name: kv-secrets
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: apim-secrets
+  extraVolumeMounts:
+    - name: kv-secrets
+      mountPath: /mnt/kv
+      readOnly: true
