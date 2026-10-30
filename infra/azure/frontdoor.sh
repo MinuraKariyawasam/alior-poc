@@ -37,5 +37,12 @@ WAF_ID=$(az network front-door waf-policy show -g $RG -n podwaf --query id -o ts
 EP_ID=$(az afd endpoint show -g $RG --profile-name pod-afd --endpoint-name pod-api --query id -o tsv)
 exists afd security-policy show -g $RG --profile-name pod-afd --security-policy-name waf || az afd security-policy create -g $RG --profile-name pod-afd --security-policy-name waf --domains $EP_ID --waf-policy $WAF_ID -o none
 
+# Front Door access and health-probe logs into a small Log Analytics workspace (also the SIEM sink for PoD 6.6 / 11.1.2)
+exists monitor log-analytics workspace show -g $RG -n pod-logs || az monitor log-analytics workspace create -g $RG -n pod-logs -l $LOC_A --retention-time 30 --tags $TAGS -o none
+WS=$(az monitor log-analytics workspace show -g $RG -n pod-logs --query id -o tsv)
+AFD=$(az afd profile show -g $RG --profile-name pod-afd --query id -o tsv)
+az monitor diagnostic-settings show --resource $AFD -n afd-logs -o none 2>/dev/null || az monitor diagnostic-settings create --resource $AFD -n afd-logs --workspace $WS \
+  --logs '[{"category":"FrontDoorAccessLog","enabled":true},{"category":"FrontDoorHealthProbeLog","enabled":true},{"category":"FrontDoorWebApplicationFirewallLog","enabled":true}]' -o none
+
 HOST=$(az afd endpoint show -g $RG --profile-name pod-afd --endpoint-name pod-api --query hostName -o tsv)
 echo "front door: https://$HOST  (propagation takes a few minutes)"
