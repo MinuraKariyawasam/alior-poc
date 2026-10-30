@@ -1,0 +1,20 @@
+# WSO2 API Platform gateway operator 0.11.4 (pins gateway chart 1.2.5). Installs Gateway API CRDs.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateway-operator
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/wso2/api-platform/helm-charts
+    chart: gateway-operator
+    targetRevision: 0.11.4
+    helm:
+      releaseName: gateway-operator
+      valuesObject:
+        nodeSelector: {agentpool: work}
+  destination: {server: https://kubernetes.default.svc, namespace: wso2-gw}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [ServerSideApply=true]
