@@ -40,7 +40,7 @@ mk_pool(){ # cluster name max extra...
     --node-count 1 --node-vm-size Standard_D4s_v5 --enable-cluster-autoscaler --min-count 0 --max-count $max \
     --labels pool=$n --tags $TAGS "$@" -o none
 }
-mk_pool pod-a-aks wso2cp 1 --node-taints wso2cp=true:NoSchedule
+mk_pool pod-a-aks wso2cp 1   # no taint: the APIM chart has nodeSelector but no tolerations; placement is by selector
 mk_pool pod-a-aks work 3
 mk_pool pod-b-aks work 2
 
@@ -48,6 +48,12 @@ log "key vault csi add-on (secrets from pod-kv-alior into pods, no secrets in gi
 for c in pod-a-aks pod-b-aks; do
   az aks addon show -g $RG -n $c -a azure-keyvault-secrets-provider -o none 2>/dev/null || \
     az aks enable-addons -g $RG -n $c -a azure-keyvault-secrets-provider --enable-secret-rotation -o none
+done
+# the add-on's identity reads secrets from the vault
+KVID=$(az keyvault show -g $RG -n $KV --query id -o tsv)
+for c in pod-a-aks pod-b-aks; do
+  CID=$(az aks show -g $RG -n $c --query addonProfiles.azureKeyvaultSecretsProvider.identity.clientId -o tsv)
+  az role assignment create --role "Key Vault Secrets User" --assignee $CID --scope $KVID -o none 2>/dev/null || true
 done
 
 log "attach acr"
