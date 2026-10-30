@@ -34,7 +34,7 @@ IP_A=$(kubectl --context pod-a-aks -n wso2-gw get svc -l app.kubernetes.io/compo
 IP_B=$(kubectl --context pod-b-aks -n wso2-gw get svc -l app.kubernetes.io/component=gateway-runtime -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')
 FD=$(az afd endpoint show -g $RG --profile-name pod-afd --endpoint-name pod-api --query hostName -o tsv 2>/dev/null || true)
 blocked(){ # label url  (after lockdown.sh only Front Door may reach the gateway and ingress IPs)
-  local code; code=$(curl -sk -m 8 -o /dev/null -w '%{http_code}' "$2" 2>/dev/null || echo 000)
+  local code; code=$(curl -sk -m 8 -o /dev/null -w '%{http_code}' "$2" 2>/dev/null) || true   # curl prints 000 itself on a timeout
   printf '%-34s %s\n' "$1" "$code"; [ "$code" = 000 ] || fail=1
 }
 blocked "region A gateway direct ($IP_A)" "https://$IP_A:8443/"
