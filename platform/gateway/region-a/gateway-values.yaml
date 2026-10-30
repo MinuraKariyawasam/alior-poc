@@ -1,0 +1,39 @@
+# Overlay on the operator's default gateway chart (1.2.5) values for pod-a-gw. Deep-merged by the operator.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-a-gw-values
+  namespace: wso2-gw
+data:
+  values.yaml: |
+    gateway:
+      config:
+        controller:
+          controlplane:
+            insecure_skip_verify: true     # the APIM control plane uses the chart's self-signed certificate
+            reconnect_max: 30s             # default 5m; short so the gateway is back quickly after drills D2/D5
+            gateway_name: pod-a-gw
+          logging:
+            level: info
+            format: json
+        router:
+          access_logs:
+            enabled: true
+            format: json
+      controller:
+        encryptionKeys:
+          enabled: true                    # mandatory, fail-closed; Secret created by platform/gateway/secrets.sh
+          secretName: gateway-encryption-keys
+        tls:
+          certManager:
+            commonName: pod-a-gw
+            dnsNames: [pod-a-gw, pod-a-gw.wso2-gw.svc, "*.alior-poc.local", localhost]
+        persistence:
+          size: 1Gi
+      gatewayRuntime:
+        service:
+          type: LoadBalancer               # public IP for Front Door origins; health probes on /_gateway-health/ready
+        deployment:
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1Gi}

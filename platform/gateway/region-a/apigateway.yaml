@@ -1,0 +1,31 @@
+# One Platform Gateway per cluster, managed by the WSO2 gateway operator. Registered in the control plane as pod-a-gw
+# (platform/gateway/register.sh creates Secret gateway-cp-token). Accepts APIs from any namespace.
+apiVersion: gateway.api-platform.wso2.com/v1
+kind: APIGateway
+metadata:
+  name: pod-a-gw
+  namespace: wso2-gw
+spec:
+  apiSelector:
+    scope: Cluster
+  infrastructure:
+    replicas: 1
+    nodeSelector:
+      agentpool: work
+    resources:
+      requests: {cpu: 200m, memory: 256Mi}
+      limits: {cpu: "1", memory: 512Mi}
+    labels:
+      project: alior-poc
+      region: a
+  controlPlane:
+    host: "apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443"
+    tokenSecretRef:
+      name: gateway-cp-token
+      key: token
+    tls:
+      enabled: true
+  storage:
+    type: sqlite
+  configRef:
+    name: pod-a-gw-values
