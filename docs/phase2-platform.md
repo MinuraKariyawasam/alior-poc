@@ -64,10 +64,10 @@ Each step: write files, check locally (`helm template` renders, `kubectl --dry-r
 commit, push, then apply (ground rule 12).
 
 1. `platform/argocd/`: pinned Argo CD values, bootstrap script per cluster (`helm install` by hand, then the app-of-apps `Application`). Apply to A, then B. **Done 2026-10-30** on both clusters; app-of-apps and `namespaces` Synced/Healthy. Note: the Free-tier API servers answer slowly at times (TLS handshake timeouts); retry rather than assume failure, and move to the Standard tier (73 USD/month per cluster) if it keeps interfering with demos.
-2. Enable the Key Vault CSI add-on on both clusters; CSI `SecretProviderClass` manifests under `platform/secrets/`.
-3. Mirror APIM and gateway images into `podacralior`; record digests.
-4. `platform/control-plane/`: APIM 4.7 values for region A, DB pointed at `pod-a-db`, toleration for the `wso2cp` taint. Argo CD syncs it.
-5. `platform/gateway/region-a/` and `region-b/`: operator + gateway CRs, registered with the control plane. Argo CD syncs both.
+2. Enable the Key Vault CSI add-on on both clusters; CSI `SecretProviderClass` manifests under `platform/secrets/`. **Done 2026-10-30**: add-on enabled, add-on identities have Key Vault Secrets User, `apim-secrets` provider class synced by Argo CD.
+3. Mirror APIM and gateway images into `podacralior`; record digests. **Done 2026-10-30** for APIM: `podacralior.azurecr.io/wso2am:4.7.0-pg1` (public 4.7.0 + PostgreSQL JDBC 42.7.7, `platform/control-plane/image`). Gateway images are pulled from ghcr by the operator; mirror later if ghcr access becomes a concern.
+4. `platform/control-plane/`: APIM 4.7 values for region A, DB pointed at `pod-a-db`, node selector `wso2cp` (taint removed: the chart has no tolerations). Argo CD syncs it as a multi-source app from the official chart. **In progress 2026-10-30**: schema loaded, app synced, pod starting.
+5. `platform/gateway/region-a/` and `region-b/`: gateway operator 0.11.4 (Argo app `gateway-operator`, installed), cert-manager v1.19.1 (installed), AES key Secrets (`secrets.sh`, done), `APIGateway` CRs + value overlays (pushed), registration (`register.sh`, after APIM is up), then the `gateway` Argo apps.
 6. `platform/observability/`: collector in both, stack in A.
 7. `infra/azure/frontdoor.sh`: Front Door Premium + WAF with both gateway public IPs as origins. Only now, because it bills from creation.
 8. Gate: an API published in the control plane answers through Front Door from both regions. Then phase 3.
