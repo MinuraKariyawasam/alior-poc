@@ -17,11 +17,11 @@ exists afd origin-group show -g $RG --profile-name pod-afd --origin-group-name g
   --sample-size 4 --successful-samples-required 3 --additional-latency-in-milliseconds 50 -o none
 for r in a b; do v=IP_$(echo $r | tr a-z A-Z); IP=${!v}
   if exists afd origin show -g $RG --profile-name pod-afd --origin-group-name gateways --origin-name region-$r; then
-    az afd origin update -g $RG --profile-name pod-afd --origin-group-name gateways --origin-name region-$r --host-name $IP --origin-host-header $IP -o none
+    az afd origin update -g $RG --profile-name pod-afd --origin-group-name gateways --origin-name region-$r --host-name $IP --origin-host-header pod-$r-gw.alior-poc.local -o none
   else
     az afd origin create -g $RG --profile-name pod-afd --origin-group-name gateways --origin-name region-$r \
-      --host-name $IP --origin-host-header $IP --http-port 8080 --https-port 8443 --priority 1 --weight 500 \
-      --enabled-state Enabled --enable-certificate-name-check false -o none
+      --host-name $IP --origin-host-header pod-$r-gw.alior-poc.local --http-port 8080 --https-port 8443 --priority 1 --weight 500 \
+      --enabled-state Enabled --enforce-certificate-name-check false -o none   # gateways present self-signed certs; Host = the vhost the gateway was registered with
   fi
 done
 exists afd route show -g $RG --profile-name pod-afd --endpoint-name pod-api --route-name all || az afd route create -g $RG --profile-name pod-afd --endpoint-name pod-api --route-name all \
