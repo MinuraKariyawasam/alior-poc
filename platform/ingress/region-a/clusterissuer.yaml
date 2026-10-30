@@ -1,0 +1,15 @@
+# Let's Encrypt production issuer, HTTP-01 through ingress-nginx. Port 80 on the ingress IP must stay reachable.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: minura@wso2.com
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
