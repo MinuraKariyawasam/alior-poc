@@ -1,0 +1,16 @@
+# Region b overrides on top of values.yaml: Argo CD served under https://pod-b-alior.westeurope.cloudapp.azure.com/argocd behind ingress-nginx.
+configs:
+  params:
+    server.insecure: "true"
+    server.rootpath: /argocd
+    server.basehref: /argocd
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: pod-b-alior.westeurope.cloudapp.azure.com
+    path: /argocd
+    pathType: Prefix
+    tls: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
