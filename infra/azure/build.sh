@@ -74,6 +74,10 @@ az vm run-command invoke -g $RG -n pod-a-db --command-id RunShellScript \
   --query "value[0].message" -o tsv | tail -5
 unset PGPASS
 
+log "apim admin password in key vault (consumed by the chart via existingSecret)"
+az keyvault secret show --vault-name $KV -n apim-admin-password -o none 2>/dev/null || \
+  az keyvault secret set --vault-name $KV -n apim-admin-password --value "$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-20)" -o none
+
 log "legacy backend vm (region B, private only)"
 exists vm show -g $RG -n pod-b-vm || az vm create -g $RG -n pod-b-vm -l $LOC_B --image Ubuntu2404 --size Standard_B1ms \
   --vnet-name pod-b-vnet --subnet vm --public-ip-address "" --os-disk-size-gb 30 --storage-sku StandardSSD_LRS \
