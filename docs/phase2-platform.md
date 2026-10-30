@@ -61,7 +61,7 @@ WSO2 images. Values files reference the Kubernetes Secret the CSI driver creates
 Each step: write files, check locally (`helm template` renders, `kubectl --dry-run=server` where possible),
 commit, push, then apply (ground rule 12).
 
-1. `platform/argocd/`: pinned Argo CD values, bootstrap script per cluster (`helm install` by hand, then the app-of-apps `Application`). Apply to A, then B.
+1. `platform/argocd/`: pinned Argo CD values, bootstrap script per cluster (`helm install` by hand, then the app-of-apps `Application`). Apply to A, then B. **Done 2026-10-30** on both clusters; app-of-apps and `namespaces` Synced/Healthy. Note: the Free-tier API servers answer slowly at times (TLS handshake timeouts); retry rather than assume failure, and move to the Standard tier (73 USD/month per cluster) if it keeps interfering with demos.
 2. Enable the Key Vault CSI add-on on both clusters; CSI `SecretProviderClass` manifests under `platform/secrets/`.
 3. Mirror APIM and gateway images into `podacralior`; record digests.
 4. `platform/control-plane/`: APIM 4.7 values for region A, DB pointed at `pod-a-db`, toleration for the `wso2cp` taint. Argo CD syncs it.
