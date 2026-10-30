@@ -13,7 +13,7 @@ j(){ python3 -c "import sys,json; d=json.load(sys.stdin); $1"; }
 
 ID=$(api "$PUB/apis?query=name:$N" | j 'l=[a["id"] for a in d.get("list",[]) if a["name"]=="'$N'"]; print(l[0] if l else "")')
 if [ -z "$ID" ]; then
-  ID=$(api -X POST "$PUB/apis/import-openapi" -F file=@apis/accounts/openapi.yaml \
+  ID=$(api -X POST "$PUB/apis/import-openapi" -F file=@tests/accounts-openapi.yaml \
     -F 'additionalProperties={"name":"'$N'","version":"'$V'","context":"/'$N'","gatewayType":"APIPlatform","policies":["DefaultSubscriptionless"],"endpointConfig":{"endpoint_type":"http","production_endpoints":{"url":"'$EP'"},"sandbox_endpoints":{"url":"'$EP'"}}}' \
     | j 'print(d.get("id") or sys.exit("import failed: "+json.dumps(d)))')
   echo "created API $N ($ID) -> $EP"

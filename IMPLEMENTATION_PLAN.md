@@ -41,7 +41,7 @@ flowchart TB
 | D2 | **One WSO2 API Manager 4.7 control plane, in region A.** No standby. | Matches the PoD brief. DR is shown as backup/restore (10.1). |
 | D3 | **WSO2 API Platform Gateway** (Envoy runtime + policy engine + gateway controller with its state in in-cluster SQLite, the chart default; external Postgres declined 2026-10-30), deployed via the gateway operator. | Kubernetes-native. Each region is self-contained, and gateways keep serving traffic if the control plane is down. |
 | D4 | **Azure Front Door Premium + WAF**, active-active to both gateways. | Covers 1.3 and 1.5. Health probes drive failover. |
-| D5 | **GitOps:** Git → CI (GitHub Actions) → Argo CD → operator CRs. | Covers 2.3 (CI/CD path) and 2.5 (audit). |
+| D5 | **GitOps for the platform:** Git → CI (GitHub Actions) → Argo CD → operator CRs for the gateways. APIs are deployed top-down by the control plane (Publisher REST API from CI), not as CRs (decided 2026-10-30). | Covers 2.3 (CI/CD path) and 2.5 (audit). |
 | D6 | **Observability:** OTel collector → Prometheus/Grafana, Loki or Elasticsearch, syslog forward. | Covers 7.1, 7.2, 6.6 and SIEM for 11.1.2. |
 | D7 | **Custom security layer (PoD 3)** as a Go policy built into the policy engine with Gateway Builder. Fallback: a sidecar plus readiness probe for 3.4 and 3.5. | Only custom-code item in scope. |
 
@@ -193,7 +193,7 @@ The effort column shows one-person days. The total for this repo's scope is abou
 | D1 | Kill region A gateway pods | Front Door shifts traffic to region B; a blip, not an outage | 1.5, 10 |
 | D2 | Control plane down, then restart gateway runtime pods | Traffic keeps flowing from the controller's local config | 15.2 |
 | D3 | Scale region A runtimes from 4 to 8 | No errors | 10.2 |
-| D4 | Merge a PR adding an API version | The API appears in both regions | 2.3 |
+| D4 | Pipeline imports a new API version through the Publisher REST API | The API appears in both regions | 2.3 |
 | D5 | Block region B's outbound traffic to the control plane (NSG rule) | Region B keeps serving: the on-prem-to-cloud link-loss case | 15.4 |
 | D6 | Lose region A entirely | Region B keeps serving; no publishing until the control plane is restored | 15.4, 10.1 |
 

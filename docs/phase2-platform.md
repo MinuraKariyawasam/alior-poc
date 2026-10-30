@@ -8,7 +8,7 @@ into the two clusters, who deploys it, and in what order.
 | What | Deployed by | How |
 |---|---|---|
 | The platform: Argo CD apps, APIM 4.7 control plane, gateway operator, gateways, observability, the in-cluster mock pod | **Argo CD** | Helm charts and values files committed to this repo. Argo CD renders and applies them, and reverts manual changes. Nobody runs `helm install` or `kubectl apply` by hand. |
-| The APIs and their policies | **APIM 4.7 control plane** | Published in the APIM UI or merged as API definitions under `apis/`. The control plane pushes them to both gateways over WebSocket. Argo CD is not involved. |
+| The APIs and their policies | **APIM 4.7 control plane** | Published in the APIM UI or through the Publisher REST API from a pipeline (top-down, decided with Gihan on 2026-10-30; no API CRs in the clusters). The control plane pushes them to both gateways over WebSocket. Argo CD is not involved. |
 
 Helm stays the packaging format WSO2 ships; Argo CD is the thing that runs it. The one install done by hand is
 Argo CD itself, once per cluster, because it cannot install itself. That command is in this repo too.
@@ -103,5 +103,5 @@ How the pieces fit:
 ## What the bank sees in PoD 2.3
 
 - UI path: publish an API in the APIM portal, call it through Front Door, both regions answer.
-- Git path (drill D4): merge a pull request that adds an API version under `apis/`; CI validates it, the control
-  plane picks it up, both gateways serve it. Argo CD shows the platform in sync; Git history is the audit trail (PoD 2.5).
+- Git path (drill D4): a pipeline step imports the OpenAPI file and deploys the revision through the Publisher REST API,
+  exactly as `tests/gate.sh` does with `tests/accounts-openapi.yaml`; the control plane pushes it to both gateways. Argo CD shows the platform in sync; Git history is the audit trail (PoD 2.5).
