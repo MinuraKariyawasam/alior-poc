@@ -88,7 +88,17 @@ How the pieces fit:
 - ingress-nginx 4.15.1 (Argo app `ingress-nginx`) terminates TLS on that IP. cert-manager's `ClusterIssuer letsencrypt` (HTTP-01, Argo app `ingress-issuer`) issues a certificate for the cloudapp name into Secret `origin-tls` through the `origin-tls` Ingress. Port 80 on the ingress IP must stay open for validation.
 - Front Door validates the origin certificate by SNI against the cloudapp name, but sends the endpoint host as the HTTP Host header. So the routing rules match the Front Door host: the API Manager chart ingress (`kubernetes.ingress.management.hostname`) and Argo CD's ingress (`server.ingress.hostname`, path `/argocd`, `server.rootpath`) both use it. The APIM chart writes that hostname into `[server] hostname` and every portal URL, which is why the Front Door host, not the cloudapp name, has to be the value.
 - `infra/azure/frontdoor-ui.sh endpoints` creates the endpoints first (their names are needed in the values); `frontdoor-ui.sh all` adds origin groups, routes and the UI WAF once the certificates are issued.
-- Last step: NSG rules so the gateway and ingress IPs accept 443/8080/8443 only from the `AzureFrontDoor.Backend` service tag (80 stays open for Let's Encrypt).
+- Last step: NSG rules so the gateway and ingress IPs accept 443/8080/8443 only from the `AzureFrontDoor.Backend` service tag (80 stays open for Let's Encrypt). `make lockdown`, rules named `afd-*` and `acme-ingress-allow` on each cluster's node NSG.
+
+**Done 2026-10-30.** `make gate` passes with the lock-down on: direct calls to both gateway IPs time out, the API and the three UI endpoints answer 200 through Front Door. Things that cost time, so they are not repeated:
+
+- ingress-nginx's admission webhook under Argo CD: the chart's patch job sets the webhook `caBundle`, Argo CD reverts it, and every Ingress is then rejected with "certificate signed by unknown authority". `admissionWebhooks.enabled: false` in the app values.
+- The Network Contributor role for the cluster identity took about 35 minutes to take effect in polandcentral (westeurope: 2 minutes). Until then the Service event says the public IP "doesn't exist", which is misleading; delete and let Argo CD recreate the Service once the role has propagated.
+- Argo CD's own Helm upgrade (bootstrap.sh) fails while the webhook rejects Ingresses, and `helm history` shows the release as `failed`; rerun bootstrap.sh after the webhook is gone.
+- Front Door route changes take 30 to 45 minutes to propagate; until then the endpoint serves Front Door's own "Page not found" with `x-cache: CONFIG_NOCACHE`. `deploymentStatus` stays `NotStarted` and says nothing.
+- API Manager keeps five revisions per API; the gate deletes undeployed ones before creating a new revision.
+- A WSO2 server running on the laptop holds 9443; the gate port-forwards on 19443.
+- Resource tags collapsed into one when a build step was run from zsh (`--tags $TAGS` is not split there). `make tags` reconciles; env.sh now sets `shwordsplit` under zsh.
 
 ## What the bank sees in PoD 2.3
 
