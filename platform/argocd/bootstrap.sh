@@ -7,7 +7,7 @@ CHART_VERSION=10.11.6
 helm repo add argo https://argoproj.github.io/argo-helm >/dev/null 2>&1 || true
 helm repo update argo >/dev/null
 helm upgrade --install argocd argo/argo-cd --version $CHART_VERSION \
-  --kube-context $ctx -n argocd --create-namespace -f values.yaml --wait --timeout 15m
+  --kube-context $ctx -n argocd --create-namespace -f values.yaml -f values-$r.yaml --wait --timeout 15m
 kubectl --context $ctx apply -f region-$r/app-of-apps.yaml
 kubectl --context $ctx -n argocd get pods
 echo "admin password: kubectl --context $ctx -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
