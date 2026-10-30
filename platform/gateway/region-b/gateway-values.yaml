@@ -42,6 +42,11 @@ data:
             dnsNames: [pod-b-gw, pod-b-gw.wso2-gw.svc, "*.alior-poc.local", localhost]
         persistence:
           size: 1Gi
+        deployment:
+          podSecurityContext:
+            fsGroup: 10001                 # the image runs as uid 10001; the Azure disk mounts root-owned 755 without this and SQLite cannot create its file
+          strategy:
+            type: Recreate                 # the data disk is ReadWriteOnce; a rolling update would wait on the old pod forever
       gatewayRuntime:
         service:
           type: LoadBalancer               # public IP for Front Door origins; health probes on /_gateway-health/ready

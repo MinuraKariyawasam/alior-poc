@@ -18,7 +18,7 @@ spec:
     labels:
       project: alior-poc
       region: b
-      config-rev: "2"
+      config-rev: "3"
   controlPlane:
     host: "10.10.0.6:9443"
     tokenSecretRef:
