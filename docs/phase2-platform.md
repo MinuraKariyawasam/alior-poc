@@ -1,0 +1,77 @@
+# Phase 2: platform inside the clusters
+
+Written before building, 2026-10-30. Phase 1 (Azure resources) is done; this page says what goes
+into the two clusters, who deploys it, and in what order.
+
+## Two pipelines, not one
+
+| What | Deployed by | How |
+|---|---|---|
+| The platform: Argo CD apps, APIM 4.7 control plane, gateway operator, gateways, observability, the in-cluster mock pod | **Argo CD** | Helm charts and values files committed to this repo. Argo CD renders and applies them, and reverts manual changes. Nobody runs `helm install` or `kubectl apply` by hand. |
+| The APIs and their policies | **APIM 4.7 control plane** | Published in the APIM UI or merged as API definitions under `apis/`. The control plane pushes them to both gateways over WebSocket. Argo CD is not involved. |
+
+Helm stays the packaging format WSO2 ships; Argo CD is the thing that runs it. The one install done by hand is
+Argo CD itself, once per cluster, because it cannot install itself. That command is in this repo too.
+
+## Where Argo CD runs
+
+One Argo CD per cluster, namespace `argocd`, on the `work` node pool. Not a single hub in region A, because:
+
+- drills D5 and D6 cut region B off from region A, and region B must stay deployable through them;
+- the DR demo (PoD 10.1) rebuilds the region B gateway namespace from Git, which needs Argo CD in region B;
+- an on-prem cluster would run its own deployment tooling, which is the story region B tells.
+
+Both instances watch `https://github.com/MinuraKariyawasam/alior-poc`, branch `main`, different paths:
+
+| Cluster | Argo CD app-of-apps path | Deploys |
+|---|---|---|
+| pod-a-aks | `platform/argocd/region-a/` | control plane (`wso2-cp`), gateway operator + gateway (`wso2-gw`), Prometheus/Grafana/Loki + OTel (`observability`), mock pod (`apps`) |
+| pod-b-aks | `platform/argocd/region-b/` | gateway operator + gateway (`wso2-gw`), OTel collector (`observability`), mock pod (`apps`) |
+
+Pinned versions (ground rule 4):
+
+| Component | Chart | Version | App version | Source |
+|---|---|---|---|---|
+| Argo CD | `argo-cd` from https://argoproj.github.io/argo-helm | 10.11.6 | v3.5.6 | chart index, published 2026-10-26 |
+| APIM 4.7 | `wso2/helm-apim`, branch 4.7.x, all-in-one | to pin at build time from the chart's `Chart.yaml` | 4.7.x | official repo |
+| API Platform Gateway | `wso2/api-platform`, `kubernetes/helm/gateway-helm-chart` and `operator-helm-chart` | to pin at build time from `Chart.yaml` | | official repo |
+
+APIM and gateway versions are read from the official charts when the values files are written, never guessed (ground rule 1).
+
+## Namespaces and placement
+
+| Namespace | Cluster | Node pool | Contents |
+|---|---|---|---|
+| `argocd` | both | work | Argo CD |
+| `wso2-cp` | A only | wso2cp (tainted, toleration on the APIM pod) | APIM 4.7 control plane, DB on `pod-a-db` |
+| `wso2-gw` | both | work | gateway operator, gateway controller (SQLite PVC) + router |
+| `observability` | both | work | A: Prometheus, Grafana, Loki, OTel collector. B: OTel collector shipping to A |
+| `apps` | both | work | one small mock pod (`mocks/mock.py`) for PoD 1.1 only |
+
+Backends for everything else are on `pod-b-vm` (10.20.16.4), see `mocks/README.md`.
+
+## Secrets
+
+Key Vault `pod-kv-alior` through the Secrets Store CSI driver (AKS add-on `azure-keyvault-secrets-provider`).
+Secrets needed: `pod-a-db-apim` (exists), the gateway-to-control-plane token, the ACR pull token for mirrored
+WSO2 images. Values files reference the Kubernetes Secret the CSI driver creates; no secret text in Git.
+
+## Build order
+
+Each step: write files, check locally (`helm template` renders, `kubectl --dry-run=server` where possible),
+commit, push, then apply (ground rule 12).
+
+1. `platform/argocd/`: pinned Argo CD values, bootstrap script per cluster (`helm install` by hand, then the app-of-apps `Application`). Apply to A, then B.
+2. Enable the Key Vault CSI add-on on both clusters; CSI `SecretProviderClass` manifests under `platform/secrets/`.
+3. Mirror APIM and gateway images into `podacralior`; record digests.
+4. `platform/control-plane/`: APIM 4.7 values for region A, DB pointed at `pod-a-db`, toleration for the `wso2cp` taint. Argo CD syncs it.
+5. `platform/gateway/region-a/` and `region-b/`: operator + gateway CRs, registered with the control plane. Argo CD syncs both.
+6. `platform/observability/`: collector in both, stack in A.
+7. `infra/azure/frontdoor.sh`: Front Door Premium + WAF with both gateway public IPs as origins. Only now, because it bills from creation.
+8. Gate: an API published in the control plane answers through Front Door from both regions. Then phase 3.
+
+## What the bank sees in PoD 2.3
+
+- UI path: publish an API in the APIM portal, call it through Front Door, both regions answer.
+- Git path (drill D4): merge a pull request that adds an API version under `apis/`; CI validates it, the control
+  plane picks it up, both gateways serve it. Argo CD shows the platform in sync; Git history is the audit trail (PoD 2.5).
