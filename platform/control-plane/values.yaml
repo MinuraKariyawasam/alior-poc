@@ -11,6 +11,9 @@ wso2:
   apim:
     configurations:
       gatewayType: "Regular,APK,AWS,Azure,Kong,APIPlatform"   # APIPlatform makes Platform Gateways visible in the Publisher
+      security:
+        truststore:
+          password: wso2carbon             # product default for the bundled client-truststore.jks; the chart leaves it empty, which crashes startup
       existingSecret:                        # Kubernetes Secret synced from Key Vault by platform/secrets/region-a
         secretName: apim-secrets
         adminPasswordKey: adminPassword
