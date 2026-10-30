@@ -13,6 +13,10 @@ data:
             insecure_skip_verify: true     # the APIM control plane uses the chart's self-signed certificate
             reconnect_max: 30s             # default 5m; short so the gateway is back quickly after drills D2/D5
             gateway_name: pod-a-gw
+          storage:
+            type: sqlite
+            sqlite:
+              path: /app/data/gateway.db
           logging:
             level: info
             format: json
@@ -21,6 +25,14 @@ data:
             enabled: true
             format: json
       controller:
+        controlPlane:                    # the CR's controlPlane block did not reach the chart on 0.11.4; set the chart keys here
+          host: "apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443"
+          token:
+            secretName: gateway-cp-token
+            key: token
+        storage:
+          type: sqlite
+          sqlitePath: /app/data/gateway.db  # must be absolute: the container has no working directory, so ./data does not exist
         encryptionKeys:
           enabled: true                    # mandatory, fail-closed; Secret created by platform/gateway/secrets.sh
           secretName: gateway-encryption-keys

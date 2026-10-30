@@ -18,6 +18,7 @@ spec:
     labels:
       project: alior-poc
       region: a
+      config-rev: "2"
   controlPlane:
     host: "apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443"
     tokenSecretRef:
@@ -27,5 +28,6 @@ spec:
       enabled: true
   storage:
     type: sqlite
+    sqlitePath: /app/data/gateway.db
   configRef:
     name: pod-a-gw-values
