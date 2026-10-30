@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateway
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/MinuraKariyawasam/alior-poc.git
+    targetRevision: main
+    path: platform/gateway/region-a
+  destination: {server: https://kubernetes.default.svc, namespace: wso2-gw}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
