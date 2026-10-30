@@ -5,6 +5,7 @@ export LOC_A=polandcentral
 export LOC_B=westeurope
 export EXPIRY="${EXPIRY:-tbd}"   # fill in the Last Day of Use; retag with: az tag update --operation merge --tags expiry=<date> --resource-id <id>
 export TAGS="project=alior-poc owner=minura@wso2.com expiry=$EXPIRY env=pod"
+[ -n "${ZSH_VERSION:-}" ] && setopt shwordsplit   # zsh does not split unquoted $TAGS; bash does
 export K8S=1.36
 export ACR=podacralior            # globally unique, alphanumeric
 export KV=pod-kv-alior            # globally unique, max 24 chars
