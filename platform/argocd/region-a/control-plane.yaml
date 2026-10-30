@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: control-plane
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/wso2/helm-apim.git     # official chart, pinned to the 4.7.x branch (4.7.0-5)
+      targetRevision: 4.7.x
+      path: all-in-one
+      helm:
+        releaseName: apim
+        valueFiles:
+          - $values/platform/control-plane/values.yaml
+    - repoURL: https://github.com/MinuraKariyawasam/alior-poc.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/MinuraKariyawasam/alior-poc.git
+      targetRevision: main
+      path: platform/control-plane
+      directory: {include: apim-internal-lb.yaml}
+  destination: {server: https://kubernetes.default.svc, namespace: wso2-cp}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [ServerSideApply=true]
