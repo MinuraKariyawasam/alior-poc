@@ -6,3 +6,4 @@
 *.key
 kubeconfig*
 evidence/**/*.mp4
+.argocd-passwords
