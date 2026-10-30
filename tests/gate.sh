@@ -18,6 +18,9 @@ if [ -z "$ID" ]; then
     | j 'print(d.get("id") or sys.exit("import failed: "+json.dumps(d)))')
   echo "created API $N ($ID) -> $EP"
 else echo "API $N exists ($ID)"; fi
+# APIM keeps at most 5 revisions per API: drop undeployed ones so the gate stays rerunnable
+for old in $(api "$PUB/apis/$ID/revisions?query=deployed:false" | j 'print(" ".join(r["id"] for r in d.get("list",[])[:-1]))'); do
+  api -X DELETE "$PUB/apis/$ID/revisions/$old" -o /dev/null -w "deleted undeployed revision $old -> %{http_code}\n"; done
 REV=$(api -X POST -H "Content-Type: application/json" "$PUB/apis/$ID/revisions" -d '{"description":"gate"}' | j 'print(d.get("id") or sys.exit("revision failed: "+json.dumps(d)))')
 api -X POST -H "Content-Type: application/json" "$PUB/apis/$ID/deploy-revision?revisionId=$REV" \
   -d '[{"name":"pod-a-gw","vhost":"pod-a-gw.alior-poc.local","displayOnDevportal":true},{"name":"pod-b-gw","vhost":"pod-b-gw.alior-poc.local","displayOnDevportal":true}]' \
