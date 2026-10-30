@@ -1,0 +1,18 @@
+# Applied once by bootstrap.sh. Everything else in this cluster is a child Application under this path.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-region-a
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/MinuraKariyawasam/alior-poc.git
+    targetRevision: main
+    path: platform/argocd/region-a
+    directory: {recurse: false, exclude: app-of-apps.yaml}
+  destination: {server: https://kubernetes.default.svc, namespace: argocd}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
