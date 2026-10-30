@@ -1,0 +1,26 @@
+# Prerequisite of the WSO2 gateway operator (its default listener TLS provider). Pinned to the version the
+# operator quick start names. CRDs installed by the chart.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: quay.io/jetstack/charts
+    chart: cert-manager
+    targetRevision: v1.19.1
+    helm:
+      releaseName: cert-manager
+      valuesObject:
+        crds: {enabled: true}
+        global: {leaderElection: {namespace: cert-manager}}
+        nodeSelector: {agentpool: work}
+        webhook: {nodeSelector: {agentpool: work}}
+        cainjector: {nodeSelector: {agentpool: work}}
+        startupapicheck: {nodeSelector: {agentpool: work}}
+  destination: {server: https://kubernetes.default.svc, namespace: cert-manager}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]
