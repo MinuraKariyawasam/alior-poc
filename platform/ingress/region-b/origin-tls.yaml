@@ -1,0 +1,26 @@
+# Holds the Let's Encrypt certificate for the ingress's own name, which Front Door validates by SNI when it
+# connects to the origin. The rule also lets the name be opened directly for troubleshooting.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: origin-tls
+  namespace: argocd
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [pod-b-alior.westeurope.cloudapp.azure.com]
+      secretName: origin-tls
+  rules:
+    - host: pod-b-alior.westeurope.cloudapp.azure.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
