@@ -32,7 +32,18 @@ wso2:
           username: apim
 kubernetes:
   gatewayAPI:
-    enabled: false                       # chart default is on; it would render HTTPRoutes. Exposure is the internal LB below
+    enabled: false                       # chart default is on; it would render HTTPRoutes
+  ingress:
+    tlsSecret: origin-tls                # Let's Encrypt cert for pod-a-alior.polandcentral.cloudapp.azure.com (platform/ingress/region-a/origin-tls.yaml)
+    management:
+      enabled: true
+      hostname: pod-cp-eccmfmahgkevcqcy.a02.azurefd.net   # the Front Door endpoint host: the chart writes it into [server] hostname and every portal URL
+      annotations:
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        nginx.ingress.kubernetes.io/affinity: "cookie"
+        nginx.ingress.kubernetes.io/session-cookie-name: "route"
+        nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
+        nginx.ingress.kubernetes.io/proxy-body-size: "20m"
   # Mount the Key Vault provider class so the CSI driver creates/refreshes the apim-secrets Secret
   extraVolumes:
     - name: kv-secrets

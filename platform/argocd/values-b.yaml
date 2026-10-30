@@ -1,4 +1,6 @@
-# Region b overrides on top of values.yaml: Argo CD served under https://pod-b-alior.westeurope.cloudapp.azure.com/argocd behind ingress-nginx.
+# Region b overrides on top of values.yaml: Argo CD served under https://pod-ops-b-a3graqbqf9dvcxe8.a02.azurefd.net/argocd through Front Door.
+# The ingress rule matches the Front Door host (sent as the origin host header); the origin certificate for
+# pod-b-alior.westeurope.cloudapp.azure.com comes from platform/ingress/region-b/origin-tls.yaml, matched by SNI.
 configs:
   params:
     server.insecure: "true"
@@ -8,9 +10,7 @@ server:
   ingress:
     enabled: true
     ingressClassName: nginx
-    hostname: pod-b-alior.westeurope.cloudapp.azure.com
+    hostname: pod-ops-b-a3graqbqf9dvcxe8.a02.azurefd.net
     path: /argocd
     pathType: Prefix
-    tls: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
+    tls: false
