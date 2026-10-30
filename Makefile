@@ -10,3 +10,4 @@ frontdoor: ; bash infra/azure/frontdoor.sh
 gate:      ; bash tests/gate.sh
 frontdoor-ui: ; bash infra/azure/frontdoor-ui.sh all
 lockdown:  ; bash infra/azure/lockdown.sh
+tags:      ; bash infra/azure/tags.sh
