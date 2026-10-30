@@ -44,6 +44,12 @@ mk_pool pod-a-aks wso2cp 1 --node-taints wso2cp=true:NoSchedule
 mk_pool pod-a-aks work 3
 mk_pool pod-b-aks work 2
 
+log "key vault csi add-on (secrets from pod-kv-alior into pods, no secrets in git)"
+for c in pod-a-aks pod-b-aks; do
+  az aks addon show -g $RG -n $c -a azure-keyvault-secrets-provider -o none 2>/dev/null || \
+    az aks enable-addons -g $RG -n $c -a azure-keyvault-secrets-provider --enable-secret-rotation -o none
+done
+
 log "attach acr"
 az aks update -g $RG -n pod-a-aks --attach-acr $ACR -o none
 az aks update -g $RG -n pod-b-aks --attach-acr $ACR -o none
