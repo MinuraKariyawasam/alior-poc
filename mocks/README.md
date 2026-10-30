@@ -123,4 +123,48 @@ curl -i http://$H:8083/healthz
 
 ## Recorded responses
 
-Filled in by running `smoke.sh` on the VM; see below.
+Output of `smoke.sh localhost` run on `pod-b-vm` on 2026-10-30. Each block is the request, then `-> status time`, then the body.
+
+```
+### GET http://localhost:8081/accounts 
+-> 200 0.001860s
+{"service": "mock", "version": "v1", "path": "/accounts", "method": "GET", "host": "pod-b-vm", "port": 8081, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+### GET http://localhost:8082/accounts 
+-> 200 0.001536s
+{"service": "mock", "version": "v2", "path": "/accounts", "method": "GET", "host": "pod-b-vm", "port": 8082, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+### GET http://localhost:8083/legacy/accounts 
+-> 200 0.001809s
+{"service": "mock", "version": "legacy", "path": "/legacy/accounts", "method": "GET", "host": "pod-b-vm", "port": 8083, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+### POST http://localhost:8081/transfers -H content-type: application/json --data @/opt/mock/payloads/transfer.json
+-> 200 0.001395s
+{"service": "mock", "version": "v1", "path": "/transfers", "method": "POST", "host": "pod-b-vm", "port": 8081, "body_bytes": 168, "body_md5": "fd00a680d53f4bcb1d1c47542939c747", "ts": "2026-10-30T09:11:33Z"}
+
+### POST http://localhost:8081/transfers/instant -H content-type: application/json --data @/opt/mock/payloads/transfer-instant.json
+-> 200 0.001485s
+{"service": "mock", "version": "v1", "path": "/transfers/instant", "method": "POST", "host": "pod-b-vm", "port": 8081, "body_bytes": 176, "body_md5": "7732b738e94a71a3f295c57591e462d2", "ts": "2026-10-30T09:11:33Z"}
+
+### GET http://localhost:8081/accounts -H x-mock-delay-ms: 300
+-> 200 0.301756s
+{"service": "mock", "version": "v1", "path": "/accounts", "method": "GET", "host": "pod-b-vm", "port": 8081, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+### GET http://localhost:8082/transfers -H x-mock-status: 503
+-> 503 0.001359s
+{"service": "mock", "version": "v2", "path": "/transfers", "method": "GET", "host": "pod-b-vm", "port": 8082, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+### POST http://localhost:8081/transfers -H x-mock-status: 429 --data @/opt/mock/payloads/transfer.json
+-> 429 0.001483s
+{"service": "mock", "version": "v1", "path": "/transfers", "method": "POST", "host": "pod-b-vm", "port": 8081, "body_bytes": 168, "body_md5": "fd00a680d53f4bcb1d1c47542939c747", "ts": "2026-10-30T09:11:33Z"}
+
+### GET http://localhost:8081/nope 
+-> 404 0.001056s
+{"service": "mock", "version": "v1", "path": "/nope", "method": "GET", "host": "pod-b-vm", "port": 8081, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+### GET http://localhost:8083/healthz 
+-> 200 0.001372s
+{"service": "mock", "version": "legacy", "path": "/healthz", "method": "GET", "host": "pod-b-vm", "port": 8083, "body_bytes": 0, "body_md5": null, "ts": "2026-10-30T09:11:33Z"}
+
+ALL OK
+```
