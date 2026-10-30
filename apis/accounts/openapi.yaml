@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: accounts
+  version: 1.0.0
+  description: PoD sample API in front of the mock backend on pod-b-vm (mock-v1 :8081).
+paths:
+  /accounts:
+    get:
+      summary: List accounts
+      responses:
+        "200": {description: OK}
+  /transfers:
+    post:
+      summary: Create a transfer
+      responses:
+        "200": {description: OK}
+  /transfers/instant:
+    post:
+      summary: Create an instant transfer
+      responses:
+        "200": {description: OK}
