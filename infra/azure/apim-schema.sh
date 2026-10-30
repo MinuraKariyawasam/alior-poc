@@ -3,7 +3,7 @@
 # Re-running RESETS the databases (the scripts drop tables first).
 set -euo pipefail
 cd "$(dirname "$0")" && source ./env.sh
-D=../platform/control-plane/dbscripts
+D=../../platform/control-plane/dbscripts
 B64=$(tar czf - -C "$D" shared_db.sql apim_db.sql | base64 | tr -d '\n')
 az vm run-command invoke -g $RG -n pod-a-db --command-id RunShellScript --scripts "
 set -e; T=\$(mktemp -d); echo $B64 | base64 -d | tar xzf - -C \$T; chown -R postgres \$T
