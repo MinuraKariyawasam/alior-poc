@@ -44,6 +44,20 @@ mk_pool pod-a-aks wso2cp 1   # no taint: the APIM chart has nodeSelector but no 
 mk_pool pod-a-aks work 3
 mk_pool pod-b-aks work 2
 
+log "static public IPs with DNS labels for the ingress controllers (CA certificates and Front Door origins use the names)"
+for r in a b; do
+  loc=$([ $r = a ] && echo $LOC_A || echo $LOC_B)
+  exists network public-ip show -g $RG -n pod-$r-ingress-ip || az network public-ip create -g $RG -n pod-$r-ingress-ip -l $loc \
+    --sku Standard --allocation-method Static --dns-name pod-$r-alior --tags $TAGS -o none
+  az network public-ip show -g $RG -n pod-$r-ingress-ip --query "{ip:ipAddress,fqdn:dnsSettings.fqdn}" -o tsv
+done
+# the clusters' control-plane identities must be able to use IPs in this resource group
+RGID=$(az group show -n $RG --query id -o tsv)
+for c in pod-a-aks pod-b-aks; do
+  PID=$(az aks show -g $RG -n $c --query identity.principalId -o tsv)
+  az role assignment create --role "Network Contributor" --assignee-object-id $PID --assignee-principal-type ServicePrincipal --scope $RGID -o none 2>/dev/null || true
+done
+
 log "key vault csi add-on (secrets from pod-kv-alior into pods, no secrets in git)"
 for c in pod-a-aks pod-b-aks; do
   az aks addon show -g $RG -n $c -a azure-keyvault-secrets-provider -o none 2>/dev/null || \
