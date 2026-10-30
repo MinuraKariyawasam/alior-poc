@@ -17,9 +17,9 @@ done
 ORIGIN_A=pod-a-alior.polandcentral.cloudapp.azure.com; ORIGIN_B=pod-b-alior.westeurope.cloudapp.azure.com
 HOST_CP=$(az afd endpoint show -g $RG --profile-name pod-afd --endpoint-name pod-cp --query hostName -o tsv)
 HOST_OPSB=$(az afd endpoint show -g $RG --profile-name pod-afd --endpoint-name pod-ops-b --query hostName -o tsv)
-og(){ # name origin-fqdn host-header
+og(){ # name origin-fqdn host-header   (probe: GET /argocd/ answers 200 on both endpoints' hosts)
   exists afd origin-group show -g $RG --profile-name pod-afd --origin-group-name $1 || az afd origin-group create -g $RG --profile-name pod-afd --origin-group-name $1 \
-    --probe-request-type GET --probe-protocol Https --probe-interval-in-seconds 60 --probe-path /argocd/   # Argo CD UI answers 200 on both endpoints' hosts \
+    --probe-request-type GET --probe-protocol Https --probe-interval-in-seconds 60 --probe-path /argocd/ \
     --sample-size 4 --successful-samples-required 3 --additional-latency-in-milliseconds 50 -o none
   exists afd origin show -g $RG --profile-name pod-afd --origin-group-name $1 --origin-name main || az afd origin create -g $RG --profile-name pod-afd --origin-group-name $1 --origin-name main \
     --host-name $2 --origin-host-header $3 --http-port 80 --https-port 443 --priority 1 --weight 1000 --enabled-state Enabled --enforce-certificate-name-check true -o none
