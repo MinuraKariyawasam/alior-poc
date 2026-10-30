@@ -33,8 +33,10 @@ Pinned versions (ground rule 4):
 | Component | Chart | Version | App version | Source |
 |---|---|---|---|---|
 | Argo CD | `argo-cd` from https://argoproj.github.io/argo-helm | 10.11.6 | v3.5.6 | chart index, published 2026-10-26 |
-| APIM 4.7 | `wso2/helm-apim`, branch 4.7.x, all-in-one | to pin at build time from the chart's `Chart.yaml` | 4.7.x | official repo |
-| API Platform Gateway | `wso2/api-platform`, `kubernetes/helm/gateway-helm-chart` and `operator-helm-chart` | to pin at build time from `Chart.yaml` | | official repo |
+| APIM 4.7 | `wso2/helm-apim`, branch 4.7.x, all-in-one | 4.7.0-5 | 4.7.0 | Chart.yaml on the branch, 2026-10-30 |
+| Gateway operator | `oci://ghcr.io/wso2/api-platform/helm-charts/gateway-operator` | 0.11.4 | 0.11.1 | ghcr tags, 2026-10-30 |
+| API Platform Gateway | pulled by the operator from `oci://ghcr.io/wso2/api-platform/helm-charts/gateway` | 1.2.5 (pinned by the operator chart) | | |
+| cert-manager | `oci://quay.io/jetstack/charts/cert-manager` | v1.19.1 | v1.19.1 | operator quick start |
 
 APIM and gateway versions are read from the official charts when the values files are written, never guessed (ground rule 1).
 
