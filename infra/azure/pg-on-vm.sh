@@ -13,6 +13,8 @@ HBA
 systemctl restart postgresql
 sudo -u postgres psql -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='apim') THEN CREATE ROLE apim LOGIN PASSWORD '$PGPASS'; ELSE ALTER ROLE apim PASSWORD '$PGPASS'; END IF; END \$\$;"
 sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='apim'" | grep -q 1 || sudo -u postgres createdb -O apim apim
+# APIM keeps its registry/user data in a second database (shared_db in the chart)
+sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='apim_shared'" | grep -q 1 || sudo -u postgres createdb -O apim apim_shared
 install -d -o postgres -g postgres /var/backups/pg
 echo "15 2 * * * postgres pg_dump -Fc apim > /var/backups/pg/apim-\$(date +\%F).dump && find /var/backups/pg -mtime +7 -delete" > /etc/cron.d/pg-backup
 systemctl enable --now postgresql
