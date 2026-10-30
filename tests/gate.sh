@@ -33,7 +33,14 @@ call(){ # label url host
 IP_A=$(kubectl --context pod-a-aks -n wso2-gw get svc -l app.kubernetes.io/component=gateway-runtime -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')
 IP_B=$(kubectl --context pod-b-aks -n wso2-gw get svc -l app.kubernetes.io/component=gateway-runtime -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')
 FD=$(az afd endpoint show -g $RG --profile-name pod-afd --endpoint-name pod-api --query hostName -o tsv 2>/dev/null || true)
-call "region A gateway ($IP_A)" "https://$IP_A:8443" pod-a-gw.alior-poc.local
-call "region B gateway ($IP_B)" "https://$IP_B:8443" pod-b-gw.alior-poc.local
+blocked(){ # label url  (after lockdown.sh only Front Door may reach the gateway and ingress IPs)
+  local code; code=$(curl -sk -m 8 -o /dev/null -w '%{http_code}' "$2" 2>/dev/null || echo 000)
+  printf '%-34s %s\n' "$1" "$code"; [ "$code" = 000 ] || fail=1
+}
+blocked "region A gateway direct ($IP_A)" "https://$IP_A:8443/"
+blocked "region B gateway direct ($IP_B)" "https://$IP_B:8443/"
 [ -n "$FD" ] && for i in 1 2 3 4; do call "front door $FD try $i" "https://$FD" "$FD"; done
+for u in https://pod-cp-eccmfmahgkevcqcy.a02.azurefd.net/publisher/ https://pod-cp-eccmfmahgkevcqcy.a02.azurefd.net/argocd/ https://pod-ops-b-a3graqbqf9dvcxe8.a02.azurefd.net/argocd/; do
+  code=$(curl -s -m 20 -o /dev/null -w '%{http_code}' "$u" || echo 000); printf '%-34s %s\n' "ui ${u#https://pod-}" "$code"; [ "$code" = 200 ] || fail=1
+done
 [ $fail = 0 ] && echo "GATE PASSED" || { echo "GATE FAILED"; exit 1; }
