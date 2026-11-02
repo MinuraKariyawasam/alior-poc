@@ -1,0 +1,123 @@
+ID	PoD Scenario / Checklist	Presentation Type
+PoD_1	Architecture in Practice	Evidence-Based Presentation
+PoD_1.1	Deploying the solution on a Kubernetes (K8s) cluster and controlling API calls between applications running within that cluster.	
+PoD_1.2	Deploying the solution on a separate, dedicated Kubernetes (K8s) cluster (or virtual machines) and controlling API calls originating from untrusted zones and targeting API endpoints hosted on another K8s cluster or on standalone systems (e.g. VMs or appliances).	
+PoD_1.3	When exposing services to untrusted zones (e.g. the Internet), the ability to protect lower-layer protocols, e.g. TCP/IP using an external IPS/anti-DDoS solution, or HTTP using an external or built-in WAF.	
+PoD_1.4	Ability to deploy the Gateway both on premises (K8s or VMs) and in cloud environments (Azure/GCP).	
+PoD_1.5	Ability to run multiple cooperating Gateway instances with high availability (HA) and without introducing a single point of failure (SPOF).	
+PoD_1.6	Ability to use an HTTP proxy selectively (e.g. via NO_PROXY or PAC) for outbound connections.	
+PoD_2	Control Plane and Data Plane Operations	Technical Demonstration
+PoD_2.1	General API Management configuration.	
+PoD_2.2	Managing Gateways per environment for different systems.	
+PoD_2.3	Deploying a new Gateway together with API versioning, preferably demonstrated in two scenarios: using the GUI and using an appropriate CI/CD pipeline.	
+PoD_2.4	Restricting permissions to a limited group of users per Gateway or system domain.	
+PoD_2.5	Auditing configuration changes, e.g. verifying who added a given route and when.	
+PoD_3	Bank-Specific Custom Security Layer	Technical Demonstration
+PoD_3.1	Reading the entire request and response bodies.	
+PoD_3.2	Generating, for example, an MD5 hash from the request and response bodies and logging it.	
+PoD_3.3	Adding a custom header, e.g. X-Status, before returning the response, both for successful responses and for communication errors with the target microservice.	
+PoD_3.4	During Gateway startup, retrieving data from an external service, loading it and storing it in memory. Then periodically (e.g. every 15 minutes) calling that service and updating the in-memory data. If communication fails, the last successfully stored value must remain in memory.	
+PoD_3.5	Until the data has been successfully retrieved from the external service and loaded into memory, the Gateway must return OUT_OF_SERVICE in its health check.	
+PoD_3.6	Latency overhead introduced by integrating the custom security layer.	
+PoD_4	API Routing and Addressing	Technical Demonstration
+PoD_4.1	Routing a client (i.e. an application) to a microservice through the Gateway.	
+PoD_4.2	Communication between microservices within a cluster, e.g. using Kubernetes mechanisms.	
+PoD_4.3	Gateway behavior when the target microservice does not respond and when the configured timeout (30 seconds) expires during communication.	
+PoD_4.4	Presenting how communication works in a multi-cluster architecture (implementation in the demo environment is not necessarily required).	
+PoD_4.5	DNS support.	
+PoD_4.6	Path prefix stripping (strip prefix).	
+PoD_4.7	Route conflicts and priorities, e.g. for microservice URLs /transfers versus /transfers/instant.	
+PoD_4.8	Multiple routes to a single microservice.	
+PoD_4.9	Sticky sessions (session affinity).	
+PoD_5	Traffic Management	Technical Demonstration
+PoD_5.1	Directing X% of traffic to a new or previous version of a microservice.	
+PoD_5.2	Simulating an error response from a microservice (fault injection: abort) and/or additional response latency (fault injection: delay).	
+PoD_5.3	Ability to stop routing requests to a microservice once its error response rate exceeds a specified threshold (circuit breaking).	
+PoD_5.4	Shifting traffic (traffic shifting) and/or mirroring traffic (traffic mirroring) from one version of a microservice to another.	
+PoD_6	Gateway Readiness for OpenAPI Requirements	Technical Demonstration
+PoD_6.1	Online storage and retrieval of public certificate contents for each application registered in the Developer Portal.	
+PoD_6.2	Certificate validation against a Certificate Authority (CA) using CRL/OCSP.	
+PoD_6.3	Using shared functionality for selected APIs, e.g. removing unwanted request/response headers (including the ability to disable platform-specific headers globally or through custom configuration) and enabling or disabling message compression.	
+PoD_6.4	API parameterization/configuration at the API, Gateway and environment levels.	
+PoD_6.5	Anonymizing logs, or separating technical logs used for vendor diagnostics from customer logs.	
+PoD_6.6	Ability to forward logs to syslog / Elasticsearch.	
+PoD_6.7	Ability to apply a custom error-handling policy to a group of APIs.	
+PoD_6.8	Ability to run custom modules/plugins globally and apply them selectively, e.g. by directory, domain, etc.	
+PoD_6.9	Providing the required solution upgrade procedure, including documentation and any additional process requirements.	
+PoD_6.10	Availability and configurability of SQL injection protection mechanisms, including how to use them and their performance impact.	
+PoD_6.11	Ability to use an OAuth2 server provided with the offered product and apply its mechanisms to selected APIs.	
+PoD_6.12	Ability to verify JWS signatures and validate messages using stored certificates.	
+PoD_7	Logs and Monitoring Metrics	Technical Demonstration
+PoD_7.1	Logs and monitoring metrics for each layer, including the control plane, data plane, etc.	
+PoD_7.2	Integration with tools used by the Bank, e.g. Grafana, including OpenTelemetry support.	
+PoD_8	Gradual Migration of Microservices to a New Gateway	Technical Demonstration
+PoD_8.1	Method for gradually migrating microservices to a new Gateway, transparently to the client system calling the target microservice through the Gateway.	
+PoD_9	PSD2 and Open Banking Requirements	Evidence-Based Presentation
+PoD_9.1	Support for eIDAS certificates.	
+PoD_9.2	End-to-end mutual TLS (mTLS).	
+PoD_9.3	Integration with Consent Management.	
+PoD_9.4	Separate Sandbox environments with dedicated, Internet-facing Developer Portals.	
+PoD_9.5	Third-party provider (TPP) registration through the Developer Portal.	
+PoD_9.6	An audit trail compliant with regulatory requirements.	
+PoD_10	High Availability and Disaster Recovery Approach	Evidence-Based Presentation
+PoD_10.1	Presenting the Disaster Recovery (DR) approach, including configuration of a secondary site and methods for backing up and restoring Gateway and Control Plane configurations.	
+PoD_10.2	Presenting general HA mechanisms, including an example of scaling the Gateway from 4 to 8 instances.	
+PoD_11	Compliance with the OWASP API Security Top 10	Technical Demonstration
+PoD_11.1	API2: Broken Authentication	
+PoD_11.1.1	Ability to secure endpoints and define different authentication requirements for different endpoints, using Basic Authentication, OAuth2/OIDC (e.g. Entra ID) JWT, mTLS. For example a policy validating JWT signature (JWKS), issuer, audience, token validity dates.	
+PoD_11.1.2	Brute-force protection: rate limiting (by API key, user or OAuth token), spike arrest / throttling, monitoring and alerting (SIEM integration).	
+PoD_11.2	API4: Unrestricted Resource Consumption	
+PoD_11.2.1	Per-service size limits: sending a file or payload that exceeds the permitted limit.	
+PoD_11.2.2	Per-service JSON threat protection: maximum nesting depth, number of fields, number of array elements, value length.	
+PoD_11.2.3	Per-service XML threat protection: number of elements, attributes, entities.	
+PoD_11.2.4	Rate limiting / quota per API, endpoint and business operation; validation of parameters affecting backend load (limit, pageSize, depth), ability to block or override parameter values through a policy.	
+PoD_11.3	API6: Unrestricted Access to Sensitive Business Flows	
+PoD_11.3.1	Control access to selected endpoints, methods or properties using request sequence control, blocking automated requests (headless browser), CAPTCHA, detection of non-human behaviour.	
+PoD_11.4	API7: Server-Side Request Forgery	
+PoD_11.4.1	Detection of attempted SSRF requests, e.g. requests targeting 169.254.169.254, localhost or 127.0.0.1.	
+PoD_11.5	API8: Security Misconfiguration	
+PoD_11.5.1	Enforcing TLS versions and cipher suites.	
+PoD_11.5.2	HTTP method filtering: allowed GET, POST; blocked PUT, DELETE, TRACE; return 405.	
+PoD_11.5.3	CORS enforcement: central CORS policy configuration, policy inheritance.	
+PoD_11.5.4	Security headers: Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, Content-Security-Policy.	
+PoD_11.5.5	Content-Type restrictions: allowed content types, reject disallowed with 415.	
+PoD_11.5.6	Header transformation: remove Server and X-Powered-By, add standard security headers.	
+PoD_11.5.7	Error response sanitization: hide stack traces, technologies, hostnames and private IPs; standardized error messages.	
+PoD_11.6	API9: Improper Inventory Management	
+PoD_11.6.1	API inventory: unknown APIs, old versions, shadow APIs, zombie APIs, endpoints outside the API management process.	
+PoD_11.6.2	API versioning: version identification, deprecation, lifecycle management.	
+PoD_11.6.3	API usage visibility: consumers, activity by version, unused APIs.	
+PoD_12	Data Processing Model in Hybrid/Cloud Environments	Evidence-Based Presentation
+PoD_12.1	Mapping data flows and data locations.	
+PoD_12.2	Just-in-time management of service/support access.	
+PoD_12.3	Encryption using Bank-owned keys and key rotation.	
+PoD_12.4	Separation of two tenants or system domains.	
+PoD_13	Integration with External AI APIs	Technical Demonstration
+PoD_13.1	AI Gateway: controlled access for the Bank's applications, agents and processes to multiple AI models from different providers and models on the Bank's own infrastructure.	
+PoD_13.2	Centralized configuration of connections to at least two models or providers, exposed through a common interface without a permanent dependency on one provider's API.	
+PoD_13.3	Model routing based on availability, cost, performance, data classification, location, use case and approval status, with controlled fallback.	
+PoD_13.4	Rate limiting and cost/token accounting per model, application, agent, user and use case (requests, input/output/total tokens, concurrency, cost).	
+PoD_13.5	Masking sensitive data in prompts.	
+PoD_13.6	Logging prompts and responses.	
+PoD_14	AI Gateway Security Requirements	Evidence-Based Presentation
+PoD_14.1	Detailed filtering of LLM token usage by tenant, team, workflow, user, provider and model type (10 calls, then filters, screenshot).	
+PoD_14.2	Token limits per tenant, team, workflow, user, provider and model type (one request below, one above; screenshot of the block).	
+PoD_14.3	Authenticate every application, agent and user calling a model; Entra ID (OAuth2/OIDC, JWT); policy enforcing token claims.	
+PoD_14.4	Integration with Key Vault to retrieve AI credentials (Azure OpenAI key in Key Vault; screenshot of the Gateway call to Key Vault).	
+PoD_14.5	Access authorization per tenant, application, agent, model and operation (AI Gateway as Policy Enforcement Point).	
+PoD_14.6	Semantic guardrails against prompt injection (LLM-as-a-guard): instruction override, exfiltration, indirect injection.	
+PoD_14.7	Validation and sanitization of inputs and outputs with reporting (character removal, pattern masking, PII and secrets, JSON output enforcement).	
+PoD_14.8	Content filtering (responsible AI: toxicity, harm) verified with prompts from different categories.	
+PoD_14.9	Kill-switch blocking new requests and terminating active ones per agent, tenant, model, provider or whole system.	
+PoD_14.10	Short-lived capability tokens for agents (models, operations, budget, time, data classification), AI Gateway as PEP.	
+PoD_14.11	Rate-limit model calls per tenant, team, workflow and user; quota with blocking and threshold alert.	
+PoD_14.12	Alerts for unusual increases in token usage (anomaly rules).	
+PoD_14.13	Alerts for anomalous user requests (anomaly rules).	
+PoD_14.14	Prompt templates, prompt versioning and user-input length control.	
+PoD_14.15	Access control and tool-call policies between AI agents and MCP servers.	
+PoD_14.16	Logging and enforcing AuthN/AuthZ for Agent-to-Agent (A2A) and Agent-to-Tool traffic.	
+PoD_15	API Management Evolution and Future Capabilities	Evidence-Based Presentation
+PoD_15.1	API Management as a central logical layer across multiple Kubernetes clusters, on-premises, public clouds and traditional systems with dedicated Gateways, ingress controllers and load balancers.	
+PoD_15.2	Control Plane and Data Plane architecture, centralized management of distributed Gateways, Gateway behaviour during a temporary loss of connectivity to the management layer.	
+PoD_15.3	Integration with Service Mesh: division of responsibilities, ingress and egress, service information exchange, policy management, impact on security, performance and operations.	
+PoD_15.4	High availability, scaling, Disaster Recovery and degraded-mode operation in the event of cluster or region failure, loss of on-prem-to-cloud connectivity, or failure of the central management layer.	
