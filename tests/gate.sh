@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.." ; source infra/azure/env.sh
 N=accounts; V=1.0.0; EP=http://10.20.16.4:8081          # mock-v1 on pod-b-vm
 PUB=https://localhost:19443/api/am/publisher/v4   # 19443: a local WSO2 server may already hold 9443
 PW=$(az keyvault secret show --vault-name $KV -n apim-admin-password --query value -o tsv)
-kubectl --context pod-a-aks -n wso2-cp port-forward svc/apim-wso2am-all-in-one-am-service 19443:9443 >/dev/null 2>&1 & PF=$!; trap 'kill $PF 2>/dev/null' EXIT; until curl -sk -m 3 -o /dev/null https://localhost:19443/; do sleep 1; done
+kubectl --context pod-a-aks -n wso2-cp port-forward svc/apim-wso2am-all-in-one-am-service 19443:9443 >/dev/null 2>&1 & PF=$!; trap 'kill $PF 2>/dev/null' EXIT; for i in $(seq 1 30); do curl -sk -m 3 -o /dev/null https://localhost:19443/ && break; sleep 1; done; curl -sk -m 3 -o /dev/null https://localhost:19443/ || { echo "port-forward to the control plane did not come up on 19443"; exit 1; }
 api(){ curl -sk -u "admin:$PW" "$@"; }
 j(){ python3 -c "import sys,json; d=json.load(sys.stdin); $1"; }
 
