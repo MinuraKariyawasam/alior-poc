@@ -44,6 +44,10 @@ Door, for about 7 minutes, even though the control plane listed the revision as 
 controller's SQLite WAL on the PVC holds data ("Loaded configurations count 2"), so this is not a lost disk. Redeploying
 the revision from the control plane (`make gate`) restored the cluster and the API answered 200 again.
 
+Reproduced on 2026-11-02 09:40Z with a plain `kubectl rollout restart` of both controller Deployments (runtimes untouched):
+cluster count 3 in both regions, Front Door 503 within two minutes; `make gate` (deploy-revision) brought the API back in
+under a minute.
+
 This matters for drill D2 / PoD 15.2 ("traffic keeps flowing from the controller's local config"): true for a runtime
 restart, not shown for a controller restart. To raise with Gihan / the gateway team before phase 6; until then, redeploy
 from the Publisher after any controller restart.
