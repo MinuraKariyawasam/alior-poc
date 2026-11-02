@@ -60,7 +60,7 @@ SSRF fallback for 11.4.1. Needs a custom gateway image in ACR and the operator p
 | 10.2 | HPA on the region A runtime, scale 4 → 8 under k6, zero errors |
 | 10.1 | `docs/dr.md`: control plane DB backup/restore (pod-a-db), rebuild from Git; live demo: wipe wso2-gw in region B, Argo CD rebuilds it |
 | D1 to D6 | kill region A pods, control plane down + runtime restart, scale, pipeline import, NSG cut of region B, lose region A. Record each with Grafana on screen |
-| 15.2, 15.4 | slides backed by the recordings. Raise the controller-restart finding with Gihan before D2 (today's result: controller restart drops APIs until the control plane redeploys) |
+| 15.2, 15.4 | slides backed by the recordings. The controller-restart API loss was a 1.2.x issue, fixed by the 2026.10.0 upgrade (2026-11-02); `make drill D=controller-restart` is the check |
 
 ## Block 5: slides and evidence (about 3 days)
 

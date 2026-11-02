@@ -17,7 +17,7 @@ token 200 with `x-mock-version: v1`, the unprotected `accounts` API still 200, f
 Notes:
 - Whether APIM 4.7 can push the Resident Key Manager to Platform Gateways by itself was not verified (apim.docs.wso2.com
   blocks scripted access). With the trust block in place it works; revisit if WSO2 confirms automatic key manager sync.
-- Re-rendering the gateways restarted the controllers, which again dropped the deployed APIs until `make gate` redeployed
-  them (see docs/phase3-observability.md, finding).
+- Re-rendering the gateways restarted the controllers, which (on gateway 1.2.x) dropped the deployed APIs until redeployed;
+  fixed by the 2026.10.0 upgrade on 2026-11-02 (`make drill D=controller-restart`).
 - PoD 11.1.1 (Entra ID) is the same mechanism with a second entry in `keymanagers` (Entra issuer + JWKS) once the app
   registration from the WSO2 Digital team exists.

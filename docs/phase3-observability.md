@@ -48,7 +48,9 @@ moves with traffic through Front Door, both Grafana UIs serve the three WSO2 das
 dashboards come from `main` and reference a few metrics this gateway build (controller 1.2.0) does not export yet
 (`gateway_controller_apis_total`, `gateway_controller_http_requests_total`); those panels stay empty until the image moves on.
 
-### Finding: a gateway controller restart drops the deployed API until the control plane redeploys it
+### Finding (resolved 2026-11-02): a gateway controller restart dropped the deployed API until the control plane redeployed it
+
+**Resolved** by upgrading to gateway chart/images 2026.10.0 from WSO2's Harbor (known issue in 1.2.x, per Gihan). `make drill D=controller-restart` now passes: both controllers restarted, Envoy cluster count unchanged (8), API 200 through Front Door with no redeploy (evidence/15.2). Details of the upgrade in `docs/phase2-platform.md`. The text below is kept as history.
 
 Bumping `config-rev` restarts the controller (Recreate) and the runtime. Afterwards the policy engine still had its 12
 routes, but the Envoy snapshot had 3 clusters instead of 4 (`gateway_controller_snapshot_size{resource_type="cluster"}`),

@@ -2,7 +2,7 @@
 
 PoD 9, 13, 14 (Open Banking, AI Gateway) live on the existing demo environments and are not listed. Status as of 2026-11-02.
 
-**Vocabulary.** *Catalogue* = a Policy Hub policy attached in the Publisher (API → Policies) and deployed as a new revision (REST shape in `docs/pod-6.11-jwt.md`). *Gateway config* = `platform/gateway/region-*/gateway-values.yaml` through Argo CD (bump `config-rev`, then `make gate`: a controller restart drops the deployed APIs until the control plane redeploys them). *CHECK* = nothing in the catalogue or unverified; ask Gihan before spending time, else `slide`.
+**Vocabulary.** *Catalogue* = a Policy Hub policy attached in the Publisher (API → Policies) and deployed as a new revision (REST shape in `docs/pod-6.11-jwt.md`). *Gateway config* = `platform/gateway/region-*/gateway-values.yaml` through Argo CD (bump `config-rev`; since the 2026.10.0 upgrade a controller restart keeps the deployed APIs). *CHECK* = nothing in the catalogue or unverified; ask Gihan before spending time, else `slide`.
 
 **Fixed pieces**
 
@@ -111,7 +111,7 @@ PoD 9, 13, 14 (Open Banking, AI Gateway) live on the existing demo environments 
 | ID | Drill | Expected | Notes |
 |---|---|---|---|
 | D1 | kill region A gateway pods | Front Door shifts to B, a blip | probe interval sets the blip length |
-| D2 | control plane down, then restart runtime pods | traffic continues from local config | runtimes only; a controller restart needs the control plane (finding 2026-11-02) |
+| D2 | control plane down, then restart runtime and controller pods | traffic continues from local config | fixed in gateway 2026.10.0 (upgraded 2026-11-02); `make drill D=controller-restart` passes |
 | D3 | scale runtimes 4 → 8 | zero errors | node capacity |
 | D4 | pipeline imports a new API version | appears in both regions | `tests/gate.sh` |
 | D5 | NSG blocks region B → control plane | B keeps serving | rule like `make lockdown` |

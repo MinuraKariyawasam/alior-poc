@@ -35,7 +35,7 @@ Pinned versions (ground rule 4):
 | Argo CD | `argo-cd` from https://argoproj.github.io/argo-helm | 10.11.6 | v3.5.6 | chart index, published 2026-10-26 |
 | APIM 4.7 | `wso2/helm-apim`, branch 4.7.x, all-in-one | 4.7.0-5 | 4.7.0 | Chart.yaml on the branch, 2026-10-30 |
 | Gateway operator | `oci://ghcr.io/wso2/api-platform/helm-charts/gateway-operator` | 0.11.4 | 0.11.1 | ghcr tags, 2026-10-30 |
-| API Platform Gateway | pulled by the operator from `oci://ghcr.io/wso2/api-platform/helm-charts/gateway` | 1.2.5 (pinned by the operator chart) | | |
+| API Platform Gateway | `oci://registry.wso2.com/wso2-api-platform/sts/helm-charts/gateway` (WSO2 Harbor, pull Secret `harbor-registry`), set in the operator app values; images `registry.wso2.com/wso2-api-platform/sts/gateway-{controller,runtime}` pinned in the overlays | 2026.10.0 (upgraded 2026-11-02 from 1.2.5 / images 1.2.0: fixes the controller-restart API loss) | 2026.10.0 | Harbor, 2026-11-02 |
 | cert-manager | `oci://quay.io/jetstack/charts/cert-manager` | v1.19.1 | v1.19.1 | operator quick start |
 
 APIM and gateway versions are read from the official charts when the values files are written, never guessed (ground rule 1).
@@ -71,6 +71,14 @@ commit, push, then apply (ground rule 12).
 6. `platform/observability/`: collector in both, stack in A.
 7. `infra/azure/frontdoor.sh`: Front Door Premium + WAF with both gateway public IPs as origins. Only now, because it bills from creation. **Done 2026-10-30**: profile `pod-afd`, endpoint `https://pod-api-guf3bbbjh5htgxfu.a02.azurefd.net`, origins 74.153.35.38 (A) and 132.220.139.111 (B) with the registered vhost as Host header, HTTPS-only route, WAF `podwaf` with OWASP DRS 2.1 + Bot Manager 1.1 in prevention mode. Billing started today.
 8. Gate: an API published in the control plane answers through Front Door from both regions. Then phase 3. **2026-10-30**: `tests/gate.sh` publishes `accounts` (from `apis/accounts/openapi.yaml`) to both gateways; both answer 200 directly. **Gate passed 2026-10-30**: 200 from both gateways directly and through Front Door (`https://pod-api-guf3bbbjh5htgxfu.a02.azurefd.net/accounts/1.0.0/accounts`), WAF blocks an injection payload with 403 (PoD 1.3), HTTP redirects to HTTPS with 307. Front Door forwards to the gateways over HTTP 8080 inside Azure (decision, see CLAUDE.md); its config changes took 30 to 45 minutes to propagate. Phase 3 can start.
+
+## Gateway upgrade to 2026.10.0 (done 2026-11-02)
+
+Why: in gateway 1.2.x a controller restart dropped the deployed APIs until the control plane redeployed them (known issue, confirmed by Gihan). How: operator 0.11.4 kept, `gateway.helm.chartName/chartVersion` in `platform/argocd/region-*/gateway-operator.yaml` point at the Harbor chart with `registryCredentialsSecret` `harbor-registry`; the overlays set `wso2.subscription.imagePullSecret: harbor-pull` and pin both images explicitly, because the operator's embedded default values still carry the 1.2.0 tags. Both Secrets come from `make harbor-secret` (CLI secret in Key Vault `harbor-cli-secret`, user minura@wso2.com). Things that cost time:
+
+- Controller 2026.10.0 refuses the 1.2.0 SQLite file ("unsupported schema version 4, expected 6"). The overlays now point at a fresh file `/app/data/gateway-v6.db`; the old file stays on the PVC. APIs are redeployed from the control plane afterwards (`make redeploy-all`).
+- The operator's Helm upgrade in region B got stuck on a pending release ("another operation is in progress") after the first attempt and gave up after 10 retries. `helm rollback pod-b-gw-gw <last deployed>` cleared it; the operator retries after any annotation change on the `APIGateway` CR.
+- `make drill D=controller-restart` is the regression check: both controllers restarted, cluster count unchanged, API 200 with no redeploy.
 
 ## Exposure through Front Door (decided 2026-10-30)
 
