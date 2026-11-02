@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock
+  labels: {app: mock}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: mock}}
+  template:
+    metadata: {labels: {app: mock}}
+    spec:
+      nodeSelector: {agentpool: work}
+      containers:
+        - name: mock
+          image: python:3.12.7-slim
+          command: [python3, /opt/mock/mock.py, --port, "8080", --version, internal]
+          ports: [{containerPort: 8080}]
+          volumeMounts: [{name: mock-py, mountPath: /opt/mock}]
+          resources: {requests: {cpu: 20m, memory: 32Mi}, limits: {memory: 64Mi}}
+          readinessProbe: {httpGet: {path: /healthz, port: 8080}, periodSeconds: 5}
+      volumes:
+        - name: mock-py
+          configMap: {name: mock-py}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock
+spec:
+  selector: {app: mock}
+  ports: [{port: 8080, targetPort: 8080}]
