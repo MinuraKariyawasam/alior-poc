@@ -57,6 +57,10 @@ data:
         persistence:
           size: 1Gi
         deployment:
+          extraEnv:                        # PoD 1.6: the controller's outbound link to the control plane goes through the proxy when the host is not internal
+            - {name: HTTPS_PROXY, value: http://proxy.apps.svc.cluster.local:3128}
+            - {name: HTTP_PROXY, value: http://proxy.apps.svc.cluster.local:3128}
+            - {name: NO_PROXY, value: "localhost,127.0.0.1,.svc,.cluster.local"}
           podSecurityContext:
             fsGroup: 10001                 # the image runs as uid 10001; the Azure disk mounts root-owned 755 without this and SQLite cannot create its file
           strategy:

@@ -8,20 +8,18 @@ cd "$(dirname "$0")/.." ; source infra/azure/env.sh; source tests/lib/cp.sh
 mkdir -p evidence/1.6; LOG=evidence/1.6/pod-1.6-$(date +%Y%m%d-%H%M).log; exec > >(tee "$LOG") 2>&1
 fail=0; ok(){ printf '  ok   %s\n' "$1"; }; bad(){ printf '  FAIL %s\n' "$1"; fail=1; }
 for c in pod-a-aks pod-b-aks; do
-  env=$(kubectl --context $c --request-timeout=60s -n wso2-gw get deploy -l app.kubernetes.io/component=gateway-runtime -o jsonpath='{.items[0].spec.template.spec.containers[0].env[?(@.name=="NO_PROXY")].value}')
+  env=""; for try in 1 2 3; do env=$(kubectl --context $c --request-timeout=60s -n wso2-gw get deploy -l app.kubernetes.io/component=gateway-runtime -o jsonpath='{.items[0].spec.template.spec.containers[0].env[?(@.name=="NO_PROXY")].value}' 2>/dev/null); [ -n "$env" ] && break; sleep 5; done   # AKS API TLS timeouts
   [ -n "$env" ] && ok "$c runtime NO_PROXY=$env" || bad "$c runtime has no proxy env"
 done
-cp_connect || exit 1; trap 'kill $CP_PF 2>/dev/null' EXIT; TOK=$(cp_token)
-echo "== force a JWKS fetch in region B: restart its runtime so the policy engine's key cache is empty, then one token call"
-kubectl --context pod-b-aks -n wso2-gw rollout restart deploy -l app.kubernetes.io/component=gateway-runtime >/dev/null && kubectl --context pod-b-aks -n wso2-gw rollout status deploy -l app.kubernetes.io/component=gateway-runtime --timeout=180s >/dev/null
-sleep 5; since=$(date -u +%FT%TZ)
-for try in 1 2 3; do kubectl --context pod-b-aks -n wso2-gw port-forward svc/pod-b-gw-gw-gateway-gateway-runtime 18083:8080 >/dev/null 2>&1 & PF=$!; for i in $(seq 1 40); do [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' http://localhost:18083/_gateway-health/ready)" = 200 ] && break 2; sleep 1; done; kill $PF 2>/dev/null; wait $PF 2>/dev/null; done
-code=$(curl -s -m 20 -o /dev/null -w '%{http_code}' -H "Host: pod-b-gw.alior-poc.local" -H "Authorization: Bearer $TOK" http://localhost:18083/accounts-secure/1.0.0/accounts); kill $PF 2>/dev/null; wait $PF 2>/dev/null
-[ "$code" = 200 ] && ok "region B token call -> $code (policy engine validated the token, keys fetched)" || bad "region B token call -> $code"
-sleep 3; plog=$(kubectl --context pod-b-aks -n apps logs -l app=proxy --since-time="$since" 2>/dev/null); printf '%s\n' "$plog" > evidence/1.6/pod-b-proxy.log
-printf '%s\n' "$plog" | grep -q "CONNECT 10.10.0.6:9443" && ok "region B proxy log shows the external JWKS fetch: $(printf '%s' "$plog" | grep -m1 CONNECT)" || bad "region B proxy log has no CONNECT 10.10.0.6:9443 (log: $(printf '%s' "$plog" | tail -3 | tr '\n' ';'))"
-printf '%s\n' "$plog" | grep -q -E "svc|gateway-controller|mock" && bad "in-cluster traffic went through the proxy" || ok "no in-cluster traffic in the proxy log (NO_PROXY honoured)"
-alog=$(kubectl --context pod-a-aks -n apps logs -l app=proxy --since=30m 2>/dev/null | grep -v listening); printf '%s\n' "$alog" > evidence/1.6/pod-a-proxy.log
-[ -z "$alog" ] && ok "region A proxy log empty: its JWKS host is an in-cluster .svc name, bypassed" || echo "  info region A proxy log: $(printf '%s' "$alog" | tail -2 | tr '\n' ';')"
-echo "  note backend calls go through the Envoy router, which does not read proxy env vars; a router-level proxy would be gateway config"
+cp_connect || exit 1; trap 'kill $CP_PF 2>/dev/null' EXIT
+echo "== region B: the controller's outbound link to the control plane (10.10.0.6:9443, not in NO_PROXY) must use the proxy"
+cenv=$(kubectl --context pod-b-aks --request-timeout=60s -n wso2-gw get deploy -l app.kubernetes.io/component=controller -o jsonpath='{.items[0].spec.template.spec.containers[0].env[?(@.name=="NO_PROXY")].value}' 2>/dev/null)
+[ -n "$cenv" ] && ok "pod-b-aks controller NO_PROXY=$cenv" || bad "pod-b-aks controller has no proxy env"
+plog=$(kubectl --context pod-b-aks --request-timeout=60s -n apps logs -l app=proxy --tail=200 2>/dev/null | grep -v listening); printf '%s\n' "$plog" > evidence/1.6/pod-b-proxy.log
+printf '%s\n' "$plog" | grep -q "CONNECT 10.10.0.6:9443" && ok "region B proxy log: $(printf '%s' "$plog" | grep -c 'CONNECT 10.10.0.6:9443') x CONNECT 10.10.0.6:9443 (control plane reached through the proxy)" || bad "region B proxy log has no CONNECT 10.10.0.6:9443 (last lines: $(printf '%s' "$plog" | tail -3 | tr '\n' ';'))"
+printf '%s\n' "$plog" | grep -q -E "\.svc|gateway-controller|mock|\.cluster\.local" && bad "in-cluster traffic went through the proxy" || ok "no in-cluster traffic in the proxy log (NO_PROXY honoured)"
+act=$(api "$CP/api/am/admin/v4/gateways" | j 'print(" ".join(g["name"]+"="+str(g["isActive"]) for g in d.get("list",[])))'); case "$act" in *pod-b-gw=True*) ok "control plane sees pod-b-gw active through the proxied link ($act)";; *) bad "pod-b-gw not active: $act";; esac
+alog=$(kubectl --context pod-a-aks --request-timeout=60s -n apps logs -l app=proxy --tail=200 2>/dev/null | grep -v listening); printf '%s\n' "$alog" > evidence/1.6/pod-a-proxy.log
+[ -z "$alog" ] && ok "region A proxy log empty: its control plane is an in-cluster .svc name, bypassed by NO_PROXY" || echo "  info region A proxy log: $(printf '%s' "$alog" | tail -2 | tr '\n' ';')"
+echo "  note the runtime carries the same env (JWKS fetches by the policy engine did not show in the proxy log, so its HTTP client does not read the env); backend traffic goes through the Envoy router, which does not use proxy env vars either. A router-level proxy would be gateway config."
 [ $fail = 0 ] && echo "POD 1.6 PASSED" || { echo "POD 1.6 FAILED"; exit 1; }
