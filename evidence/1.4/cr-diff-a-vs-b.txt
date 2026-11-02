@@ -1,0 +1,4 @@
+23c23
+<     host: "apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443"
+---
+>     host: "10.10.0.6:9443"

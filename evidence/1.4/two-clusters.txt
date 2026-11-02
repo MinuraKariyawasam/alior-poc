@@ -1,0 +1,13 @@
+# PoD 1.4 evidence, 2026-11-02T13:23Z: the same gateway operator CR deployed in two AKS clusters, two Azure regions
+
+== pod-a-aks (polandcentral)
+pod-a-gw   apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443
+pod-a-gw-gw-gateway-controller-5b57bf9cb7-br26m        Running   aks-wso2cp-99012835-vmss000001
+pod-a-gw-gw-gateway-gateway-runtime-74f4c8b985-rbnjr   Running   aks-work-45212484-vmss000001
+
+== pod-b-aks (westeurope)
+pod-b-gw   10.10.0.6:9443
+pod-b-gw-gw-gateway-controller-586f68f597-4rzt2        Running   aks-work-33984921-vmss000001
+pod-b-gw-gw-gateway-gateway-runtime-5fccc89c9c-ndqbt   Running   aks-work-33984921-vmss000001
+
+== control plane view (admin/v4/gateways): both registered and active, see docs/health-check-2026-11-02.md
