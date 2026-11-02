@@ -34,7 +34,7 @@ PoD 9, 13, 14 (Open Banking, AI Gateway) live on the existing demo environments 
 | 2.4 | Permissions per gateway / domain | Not started | APIM roles + scope mapping (`team-a` can publish to A only); K8s RBAC Role limited to `wso2-gw` (`platform/rbac/`) | denied-action screenshots; `kubectl auth can-i` |
 | 2.5 | Audit who changed what and when | Not started | `git log`; APIM `audit.log`; AKS `kube-audit-admin` diagnostic to Log Analytics | one route added → the three log lines |
 | **3 Custom security layer** | | | | |
-| 3.1 | Read full request and response bodies | Not started | One Go policy in `policies/custom-security/`, built with Gateway Builder into a custom image in ACR; operator CR points at it | `tests/pod-3.sh` |
+| 3.1 | Read full request and response bodies | Not started | One Go policy in `policies/custom-security/`, built with Gateway Builder into a custom image in ACR; operator CR points at it. Attach path verified 2026-11-02: Publisher accepts non-Hub policy names, the controller validates against the definitions in the image | `tests/pod-3.sh` |
 | 3.2 | MD5 of both bodies, logged | Not started | same policy, MD5 in the router/policy log | MD5 printed from the log |
 | 3.3 | `X-Status` on success and on backend errors | Not started | same policy, response hook incl. upstream failure path | header on 200 and on `x-mock-status: 500` |
 | 3.4 | Load external data at startup, refresh every 15 min, keep last good | Not started | background goroutine + cached value; mock VM as the external service | stop the service → value persists |

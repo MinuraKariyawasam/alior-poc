@@ -47,6 +47,15 @@ per item, evidence under `evidence/<id>/`, STATUS.md updated as each lands.
 
 ## Block 3: custom security layer, PoD 3 (about 5 days, highest risk)
 
+Attach path verified on 2026-11-02: the Publisher accepts a policy name that is not in the Policy Hub (`apiHubPolicies`
+with `policyId name::version`, stored as its own record), the control plane pushes it, and the gateway controller
+validates it against the policy definitions loaded from the image ("policy 'pod-custom-test' major version 'v1' not found in
+loaded policy definitions" → deployment rejected). So a policy compiled into the gateway image with its
+`policy-definition.yaml` can be attached top-down from the Publisher; no Hub publication needed. The remaining build
+question is only the Gateway Builder image pipeline. The same path serves the extra policies decided on 2026-11-02 if the
+scope is accepted: 5.2 fault injection, 11.2.3 XML threat protection, 11.5.5 Content-Type 415, 6.12 JWS, 5.4 mirroring
+(policy-layer copy), 5.3 circuit breaker (per-pod state, caveat). 4.9 and 6.2 stay router/slide questions.
+
 Go policy built with Gateway Builder: read request and response bodies (3.1), MD5 logged (3.2), `X-Status` on success and
 on backend errors (3.3), startup load from an external service with 15-minute refresh and last-good value (3.4),
 readiness OUT_OF_SERVICE until loaded (3.5), k6 with and without (3.6). Also covers 6.8 (global vs selective) and the
