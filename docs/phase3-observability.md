@@ -17,16 +17,29 @@ OTel collector for now; the plan's D6 is reduced to that.
 Proof: `make test POD=7.1` checks both Prometheus instances (targets up, gateway series present), both Grafana UIs through
 Front Door (health, the three dashboards) and the JSON logs below. Output goes to `evidence/7.1/`.
 
-## Logs (PoD 6.6)
+## Logs (PoD 6.6): how it works
 
-Both gateway processes already write JSON to stdout: the router's access log (`[rtr] {...}` with method, path, status,
-durations, upstream, request id) and the controller's structured log. Kubernetes captures stdout, so any shipper the bank
-runs (Fluent Bit, Filebeat, the Azure Monitor agent) can forward it to syslog or Elasticsearch without touching the gateway.
-WSO2 publishes a Fluent Bit configuration for exactly this (`gateway/observability/fluent-bit/` in `wso2/api-platform`).
-Not deployed here on purpose; `tests/pod-7.1.sh` saves a sample line per cluster under `evidence/6.6/`.
+Three steps; only the first is built.
 
-To be decided later: whether to run a Fluent Bit DaemonSet with a syslog output for the demo, or show the stdout lines
-and the bank's own shipper story on a slide.
+1. **The gateway writes JSON to stdout.** Two processes, two streams. The router (Envoy) writes one line per API call
+   (`[rtr] {...}`: time, method, path, status, durations, upstream host, request id), switched on in the gateway values
+   with `router.access_logs` format `json`. The controller writes its own events as JSON (control plane connected, API
+   deployed, errors). Neither process writes a file or sends logs anywhere; they print.
+2. **Kubernetes catches stdout.** The node keeps each container's output under `/var/log/containers/`. That is what
+   `kubectl logs` reads and what `tests/pod-7.1.sh` saves under `evidence/6.6/`.
+3. **A shipper forwards it.** Not built. A small agent on every node reads those files and sends each line on. The bank
+   picks the destination, because the gateway does not care and the same stdout feeds any of them:
+   - syslog, the universal format every SIEM accepts (what PoD 6.6 names);
+   - Elasticsearch, for search and Kibana;
+   - Azure Monitor, one AKS flag.
+
+   Gihan's point on 2026-11-02: stdout is the lowest common denominator, so "Elastic or syslog" costs nothing on the
+   gateway side.
+
+Demo option, if a `kubectl logs` screenshot is not enough: Fluent Bit as a DaemonSet with a syslog output pointing at a
+tiny syslog receiver pod, so a gateway call shows up as a syslog line. Start from WSO2's Fluent Bit config for the gateway
+(`gateway/observability/fluent-bit/` in `wso2/api-platform`), which parses the JSON lines and tags them by component.
+About half a day. Open until the live-demo-or-slide decision is made.
 
 ## Result (2026-11-02)
 
