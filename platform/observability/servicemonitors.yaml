@@ -1,0 +1,32 @@
+# The gateway exposes Prometheus metrics on the controller (:9091 /metrics) and the policy engine (:9003 /metrics), both
+# off by default in gateway chart 1.2.5 and switched on in platform/gateway/region-*/gateway-values.yaml. The Service ports
+# are named `metrics` and `pe-metrics` by the chart. The job labels match WSO2's own prometheus.yml
+# (wso2/api-platform, gateway/observability/prometheus/prometheus.yml) so their dashboards work unchanged.
+# Envoy's own /stats/prometheus (:9901) is not scraped: the chart binds the Envoy admin interface to loopback only.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gateway-controller
+spec:
+  namespaceSelector: {matchNames: [wso2-gw]}
+  selector:
+    matchLabels: {app.kubernetes.io/name: gateway, app.kubernetes.io/component: controller}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      relabelings: [{action: replace, targetLabel: job, replacement: gateway-controller}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: policy-engine
+spec:
+  namespaceSelector: {matchNames: [wso2-gw]}
+  selector:
+    matchLabels: {app.kubernetes.io/name: gateway, app.kubernetes.io/component: gateway-runtime}
+  endpoints:
+    - port: pe-metrics
+      path: /metrics
+      interval: 15s
+      relabelings: [{action: replace, targetLabel: job, replacement: policy-engine}]

@@ -1,0 +1,15 @@
+# Scrape targets for the WSO2 gateway and the dashboards WSO2 ships for them. Applied by the `observability` Argo app in both clusters.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: observability
+resources: [servicemonitors.yaml]
+generatorOptions:
+  disableNameSuffixHash: true
+  labels: {grafana_dashboard: "1"}        # picked up by the Grafana sidecar of kube-prometheus-stack
+configMapGenerator:
+  - name: gw-dashboard-controller
+    files: [dashboards/gateway-controller.json]
+  - name: gw-dashboard-policy-engine
+    files: [dashboards/policy-engine.json]
+  - name: gw-dashboard-overview
+    files: [dashboards/infrastructure-overview.json]

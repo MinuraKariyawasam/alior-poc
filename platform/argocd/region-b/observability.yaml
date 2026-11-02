@@ -1,0 +1,17 @@
+# Gateway ServiceMonitors and the WSO2 Grafana dashboards (same content in both regions). Needs the CRDs from the
+# monitoring app, hence the retry.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/MinuraKariyawasam/alior-poc.git
+    targetRevision: main
+    path: platform/observability
+  destination: {server: https://kubernetes.default.svc, namespace: observability}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    retry: {limit: 10, backoff: {duration: 30s, factor: 2, maxDuration: 5m}}

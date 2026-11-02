@@ -20,6 +20,11 @@ data:
           logging:
             level: info
             format: json
+          metrics:
+            enabled: true                  # Prometheus /metrics on :9091 (PoD 7.1); scraped by platform/observability/servicemonitors.yaml
+        policy_engine:
+          metrics:
+            enabled: true                  # Prometheus /metrics on :9003 (PoD 7.1)
         router:
           access_logs:
             enabled: true

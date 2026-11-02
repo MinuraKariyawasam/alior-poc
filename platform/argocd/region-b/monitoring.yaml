@@ -1,0 +1,58 @@
+# Prometheus + Grafana for region b (PoD 7.1, 7.2): kube-prometheus-stack 92.17.0 (prometheus-operator v0.94.2), trimmed to
+# what the PoD needs. Scrapes the gateway controller and policy engine through the ServiceMonitors in platform/observability/.
+# Grafana: https://pod-ops-b-a3graqbqf9dvcxe8.a02.azurefd.net/grafana (admin password in Key Vault, Secret grafana-admin from
+# platform/observability/grafana-secret.sh). No Alertmanager, no node-exporter, no kube-state-metrics, no rules: metrics only.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 92.17.0
+    helm:
+      releaseName: monitoring
+      valuesObject:
+        alertmanager: {enabled: false}
+        defaultRules: {create: false}
+        kubeStateMetrics: {enabled: false}
+        nodeExporter: {enabled: false}
+        kubeApiServer: {enabled: false}
+        kubeEtcd: {enabled: false}
+        kubeControllerManager: {enabled: false}
+        kubeScheduler: {enabled: false}
+        kubeProxy: {enabled: false}
+        coreDns: {enabled: false}
+        prometheusOperator:
+          nodeSelector: {agentpool: work}
+          admissionWebhooks: {enabled: false}   # the patch job's caBundle would be reverted by Argo CD (same as ingress-nginx); we create no PrometheusRules
+          tls: {enabled: false}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {memory: 256Mi}}
+        prometheus:
+          prometheusSpec:
+            nodeSelector: {agentpool: work}
+            retention: 3d
+            resources: {requests: {cpu: 100m, memory: 512Mi}, limits: {memory: 1Gi}}
+            serviceMonitorSelectorNilUsesHelmValues: false   # pick up every ServiceMonitor, not only the chart's own
+            podMonitorSelectorNilUsesHelmValues: false
+            externalLabels: {cluster: pod-b-aks, region: "b"}
+        grafana:
+          nodeSelector: {agentpool: work}
+          defaultDashboardsEnabled: false
+          testFramework: {enabled: false}
+          admin: {existingSecret: grafana-admin, userKey: admin-user, passwordKey: admin-password}
+          grafana.ini:
+            server: {root_url: "%(protocol)s://%(domain)s/grafana", serve_from_sub_path: true}
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            hosts: [pod-ops-b-a3graqbqf9dvcxe8.a02.azurefd.net]
+            path: /grafana
+          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {memory: 256Mi}}
+  destination: {server: https://kubernetes.default.svc, namespace: observability}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [ServerSideApply=true]     # the CRDs are larger than the client-side apply annotation limit
