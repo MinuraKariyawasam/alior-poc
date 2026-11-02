@@ -1,0 +1,1 @@
+{"service": "mock", "version": "legacy", "path": "/accounts", "method": "GET", "host": "pod-b-vm", "port": 8083, "body_bytes": 0, "body_md5": null, "ts": "2026-11-02T13:30:18Z"}

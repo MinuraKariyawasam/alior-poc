@@ -1,0 +1,10 @@
+HTTP/2 200 
+date: Mon, 02 Nov 2026 13:30:18 GMT
+content-type: application/json
+content-length: 177
+x-mock-version: legacy
+x-envoy-upstream-service-time: 66
+x-azure-ref: 20261102T133018Z-185bc7f6d98fj6qmhC1SG1s3tc00000005h0000000001bb7
+x-cache: CONFIG_NOCACHE
+accept-ranges: bytes
+
