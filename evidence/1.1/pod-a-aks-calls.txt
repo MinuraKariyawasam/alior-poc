@@ -1,0 +1,3 @@
+no-token=401
+with-token=200
+body={"service": "mock", "version": "internal", "path": "/accounts", "method": "GET", "host": "mock-564cbccc56-4r6tk", "port": 8080, "body_bytes": 0, "body_md5": null, "ts": "2026-11-02T13:35:21Z"}
