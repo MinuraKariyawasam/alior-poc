@@ -40,6 +40,7 @@ data:
                     uri: https://apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443/oauth2/jwks
                     skipTlsVerify: true    # the control plane runs on the chart's self-signed certificate
       controller:
+        image: {repository: registry.wso2.com/wso2-api-platform/sts/gateway-controller, tag: "2026.10.0"}   # explicit: the operator's embedded defaults still pin 1.2.0
         metrics:
           enabled: true                    # Prometheus /metrics on :9091 (PoD 7.1); chart-level key, the template reads .Values.gateway.controller.metrics
         controlPlane:                    # the CR's controlPlane block did not reach the chart on 0.11.4; set the chart keys here
@@ -69,6 +70,7 @@ data:
           strategy:
             type: Recreate                 # the data disk is ReadWriteOnce; a rolling update would wait on the old pod forever
       gatewayRuntime:
+        image: {repository: registry.wso2.com/wso2-api-platform/sts/gateway-runtime, tag: "2026.10.0"}
         service:
           type: LoadBalancer               # public IP for Front Door origins; health probes on /_gateway-health/ready
         deployment:
