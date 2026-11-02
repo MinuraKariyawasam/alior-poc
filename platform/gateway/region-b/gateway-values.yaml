@@ -20,16 +20,16 @@ data:
           logging:
             level: info
             format: json
-          metrics:
-            enabled: true                  # Prometheus /metrics on :9091 (PoD 7.1); scraped by platform/observability/servicemonitors.yaml
         policy_engine:
           metrics:
-            enabled: true                  # Prometheus /metrics on :9003 (PoD 7.1)
+            enabled: true                  # Prometheus /metrics on :9003 (PoD 7.1); scraped by platform/observability/servicemonitors.yaml
         router:
           access_logs:
             enabled: true
             format: json
       controller:
+        metrics:
+          enabled: true                    # Prometheus /metrics on :9091 (PoD 7.1); chart-level key, the template reads .Values.gateway.controller.metrics
         controlPlane:                    # the CR's controlPlane block did not reach the chart on 0.11.4; set the chart keys here
           host: "10.10.0.6:9443"
           token:

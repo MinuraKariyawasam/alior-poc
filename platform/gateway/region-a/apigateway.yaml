@@ -18,7 +18,7 @@ spec:
     labels:
       project: alior-poc
       region: a
-      config-rev: "4"
+      config-rev: "5"
   controlPlane:
     host: "apim-wso2am-all-in-one-am-service.wso2-cp.svc.cluster.local:9443"
     tokenSecretRef:
