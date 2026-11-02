@@ -1,0 +1,1 @@
+{"time":"2026-11-02T09:26:46.259742944Z","level":"INFO","source":"/build/pkg/policyxds/snapshot.go:446","msg":"[linear cache] open watch 3 (delta: false) for api-platform.wso2.org/v1.RouteConfig all resources"}

@@ -28,6 +28,26 @@ Not deployed here on purpose; `tests/pod-7.1.sh` saves a sample line per cluster
 To be decided later: whether to run a Fluent Bit DaemonSet with a syslog output for the demo, or show the stdout lines
 and the bank's own shipper story on a slide.
 
+## Result (2026-11-02)
+
+`make test POD=7.1` PASSED: both Prometheus instances scrape `gateway-controller` and `policy-engine`, `policy_engine_requests_total`
+moves with traffic through Front Door, both Grafana UIs serve the three WSO2 dashboards, JSON log samples saved. The
+dashboards come from `main` and reference a few metrics this gateway build (controller 1.2.0) does not export yet
+(`gateway_controller_apis_total`, `gateway_controller_http_requests_total`); those panels stay empty until the image moves on.
+
+### Finding: a gateway controller restart drops the deployed API until the control plane redeploys it
+
+Bumping `config-rev` restarts the controller (Recreate) and the runtime. Afterwards the policy engine still had its 12
+routes, but the Envoy snapshot had 3 clusters instead of 4 (`gateway_controller_snapshot_size{resource_type="cluster"}`),
+so `/accounts/1.0.0/accounts` answered **503 `cluster_not_found` (flag NC)** on both gateways, directly and through Front
+Door, for about 7 minutes, even though the control plane listed the revision as deployed and both gateways as active. The
+controller's SQLite WAL on the PVC holds data ("Loaded configurations count 2"), so this is not a lost disk. Redeploying
+the revision from the control plane (`make gate`) restored the cluster and the API answered 200 again.
+
+This matters for drill D2 / PoD 15.2 ("traffic keeps flowing from the controller's local config"): true for a runtime
+restart, not shown for a controller restart. To raise with Gihan / the gateway team before phase 6; until then, redeploy
+from the Publisher after any controller restart.
+
 ## Order of operations
 
 1. Commit and push (ground rule 12); Argo CD picks up `monitoring` and `observability` in both clusters. `observability`

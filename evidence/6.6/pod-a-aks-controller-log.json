@@ -1,0 +1,1 @@
+{"time":"2026-11-02T09:28:16.00310679Z","level":"INFO","source":"/httpkit/middleware/logging.go:44","msg":"request","correlation_id":"ae2c16c1-9d18-4ad0-934a-e3d6cb8297f9","method":"POST","path":"/api/v1/query","query":"","status":404,"latency":29045,"client_ip":"127.0.0.1:37048","user_agent":"curl/8.7.1"}

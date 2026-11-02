@@ -9,16 +9,23 @@ fail=0; ok(){ printf '  ok   %s\n' "$1"; }; bad(){ printf '  FAIL %s\n' "$1"; fa
 PW=$(az keyvault secret show --vault-name "$KV" -n grafana-admin-password --query value -o tsv)
 val(){ python3 -c 'import sys,json; r=json.load(sys.stdin)["data"]["result"]; print(" ".join((x["metric"].get("job") or x["metric"].get("__name__") or "v")+"="+x["value"][1] for x in r))' 2>/dev/null; }
 
+echo "== traffic through Front Door (so the policy engine counters move)"
+for i in 1 2 3 4 5 6; do printf '%s ' "$(curl -sk -m 20 -o /dev/null -w '%{http_code}' https://pod-api-guf3bbbjh5htgxfu.a02.azurefd.net/accounts/1.0.0/accounts)"; done; echo; sleep 20   # one scrape interval
+
 for c in pod-a-aks pod-b-aks; do
   echo "== $c: Prometheus"
-  kubectl --context $c -n observability port-forward svc/monitoring-kube-prometheus-prometheus 19090:9090 >/dev/null 2>&1 & PF=$!
-  for i in $(seq 1 30); do curl -s -m 3 -o /dev/null http://localhost:19090/-/ready && break; sleep 1; done
-  q(){ curl -s -m 10 --data-urlencode "query=$1" http://localhost:19090/api/v1/query | val; }
+  for try in 1 2; do   # pod-b-aks's API server sometimes times out a TLS handshake from a laptop; one retry of the port-forward
+    kubectl --context $c -n observability port-forward svc/monitoring-kube-prometheus-prometheus 19095:9090 >/dev/null 2>&1 & PF=$!
+    for i in $(seq 1 40); do curl -sf -m 3 -o /dev/null http://localhost:19095/-/ready && break 2; sleep 1; done
+    kill $PF 2>/dev/null; wait $PF 2>/dev/null
+  done
+  q(){ curl -s -m 10 --data-urlencode "query=$1" http://localhost:19095/api/v1/query | val; }
   up=$(q 'up{job=~"gateway-controller|policy-engine"}')
   case "$up" in *gateway-controller=1*policy-engine=1*|*policy-engine=1*gateway-controller=1*) ok "scrape targets up: $up";; *) bad "scrape targets up: ${up:-none}";; esac
-  for m in gateway_controller_apis_total gateway_controller_xds_clients_connected policy_engine_policy_chains_loaded; do
+  # metric names as exported by gateway-controller/policy-engine 1.2.0 (the dashboards from main also reference a few newer ones)
+  for m in gateway_controller_xds_clients_connected 'gateway_controller_snapshot_size{resource_type="cluster"}' policy_engine_policy_chains_loaded policy_engine_xds_connection_state; do
     v=$(q "$m"); [ -n "$v" ] && ok "$m: $v" || bad "$m: no series"; done
-  echo "  info policy_engine_requests_total 5m rate: $(q 'sum(rate(policy_engine_requests_total[5m]))')"
+  r=$(q 'sum(increase(policy_engine_requests_total[10m]))'); case "$r" in ""|*=0) bad "policy_engine_requests_total did not move in 10m: ${r:-none}";; *) ok "policy_engine_requests_total 10m increase: $r";; esac
   kill $PF 2>/dev/null; wait $PF 2>/dev/null
 
   echo "== $c: gateway logs on stdout (PoD 6.6)"
@@ -27,7 +34,7 @@ for c in pod-a-aks pod-b-aks; do
   if printf '%s' "$js" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("  ok   router access log is JSON: t=%s %s %s -> %s dur=%sms" % (d["t"],d["meth"],d["path"],d["respCd"],d["dur"]))' 2>/dev/null; then
     printf '%s\n' "$js" > evidence/6.6/$c-router-access-log.json
   else bad "no JSON access log line from the router"; fi
-  cl=$(kubectl --context $c -n wso2-gw logs -l app.kubernetes.io/component=controller --tail=1 2>/dev/null)
+  cl=$(kubectl --context $c -n wso2-gw logs -l app.kubernetes.io/component=controller --tail=50 2>/dev/null | grep '^{' | tail -1)
   printf '%s' "$cl" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("  ok   controller log is JSON: level=%s msg=%s" % (d["level"],d["msg"]))' 2>/dev/null \
     && printf '%s\n' "$cl" > evidence/6.6/$c-controller-log.json || bad "controller log line is not JSON"
 done

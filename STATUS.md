@@ -31,15 +31,15 @@ Base platform (phases 1 and 2) is up: `make health`, `make gate`, docs/health-ch
 | 6.3 | Shared policy strips headers (including platform headers) and toggles compression | Not started |  |
 | 6.4 | Parameters at API, gateway and environment level | Not started |  |
 | 6.5 | Log masking; technical logs separated from customer logs | Not started |  |
-| 6.6 | Syslog + Elasticsearch forwarding | In progress | gateway logs JSON on stdout, proven by tests/pod-7.1.sh; syslog/Elastic forwarder not deployed (decided with Gihan: last) |
+| 6.6 | Syslog + Elasticsearch forwarding | In progress | router access log and controller log are JSON on stdout, samples in evidence/6.6 (2026-11-02). Open: Fluent Bit → syslog for the demo, or slide. |
 | 6.7 | Custom error policy on a group of APIs | Not started |  |
 | 6.8 | Custom policy applied globally and selectively | Not started |  |
 | 6.9 | Upgrade procedure documentation | Not started |  |
 | 6.10 | SQL injection protection, including the performance impact | Not started |  |
 | 6.11 | Bundled OAuth2 server (Key Manager) protecting selected APIs | Not started | needs jwt-auth from Policy Hub + gateway key manager config, see docs/health-check-2026-11-02.md |
 | 6.12 | JWS signature verification against a stored certificate | Not started |  |
-| 7.1 | Dashboards per layer: control plane, gateway controller, runtime, policy engine (start from stock dashboards) | In progress | Prometheus + WSO2 Grafana dashboards per cluster, tests/pod-7.1.sh (2026-11-02) |
-| 7.2 | OTel collector in both clusters → Prometheus, Grafana, Loki | In progress | same stack as 7.1: gateway metrics endpoint → Prometheus → Grafana |
+| 7.1 | Dashboards per layer: control plane, gateway controller, runtime, policy engine (start from stock dashboards) | Done | `make test POD=7.1` PASSED 2026-11-02: WSO2's controller, policy engine and overview dashboards in Grafana (A and B) through Front Door, evidence/7.1. Control plane (APIM) metrics not scraped yet. |
+| 7.2 | OTel collector in both clusters → Prometheus, Grafana, Loki | Done | reduced with Gihan (2026-11-02) to gateway metrics endpoint → Prometheus → Grafana per cluster; no OTel/Loki. Proof shared with 7.1. |
 | 8.1 | Legacy NGINX behind Front Door; move routes one at a time | Not started |  |
 | 10.1 | DR runbook `docs/dr.md`: control plane DB backup and restore, rebuild from Git. Live demo: wipe the region B gateway namespace, then rebuild with Argo CD | Not started |  |
 | 10.2 | HPA on the region A runtime; scale from 4 to 8 under k6 load, zero errors | Not started |  |
