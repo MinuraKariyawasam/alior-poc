@@ -25,7 +25,7 @@ Scope: everything built in phases 1 and 2, checked live. Re-run with `make healt
 
 ## Findings that need a decision
 
-### 1. OAuth2 is not enforced on the Platform Gateway yet
+### 1. OAuth2 is not enforced on the Platform Gateway yet (resolved 2026-11-02, see docs/pod-6.11-jwt.md)
 
 `accounts-secure` was published with `securityScheme: oauth2` and a subscription tier, yet the gateway answers 200 with no token, an invalid token and a valid token alike, directly on the runtime and through Front Door.
 

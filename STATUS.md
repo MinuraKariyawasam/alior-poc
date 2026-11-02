@@ -36,7 +36,7 @@ Base platform (phases 1 and 2) is up: `make health`, `make gate`, docs/health-ch
 | 6.8 | Custom policy applied globally and selectively | Not started |  |
 | 6.9 | Upgrade procedure documentation | Not started |  |
 | 6.10 | SQL injection protection, including the performance impact | Not started |  |
-| 6.11 | Bundled OAuth2 server (Key Manager) protecting selected APIs | Not started | needs jwt-auth from Policy Hub + gateway key manager config, see docs/health-check-2026-11-02.md |
+| 6.11 | Bundled OAuth2 server (Key Manager) protecting selected APIs | Done | `make test POD=6.11` PASSED 2026-11-02: accounts-secure 401 without/with a bad token, 200 with a Resident Key Manager token, on both gateways via Front Door; `accounts` stays open. Gateway trust block in gateway-values.yaml, Policy Hub jwt-auth 1.3 on the API. evidence/6.11 |
 | 6.12 | JWS signature verification against a stored certificate | Not started |  |
 | 7.1 | Dashboards per layer: control plane, gateway controller, runtime, policy engine (start from stock dashboards) | Done | `make test POD=7.1` PASSED 2026-11-02: WSO2's controller, policy engine and overview dashboards in Grafana (A and B) through Front Door, evidence/7.1. Control plane (APIM) metrics not scraped yet. |
 | 7.2 | OTel collector in both clusters → Prometheus, Grafana, Loki | Done | reduced with Gihan (2026-11-02) to gateway metrics endpoint → Prometheus → Grafana per cluster; no OTel/Loki. Proof shared with 7.1. |
