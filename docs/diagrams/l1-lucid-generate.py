@@ -29,10 +29,10 @@ def line(i,a,pa,b,pb,label,color="#4A4A4A",dashed=False,pos=0.5,side="top"):
 GREEN,ORANGE,PURPLE,GREY="#1B7F3B","#FF7300","#6B4FBB","#4A4A4A"
 C2,C3,C4=700,1100,1500
 # containers
-S.append({"id":"rg","type":"namedContainer","className":"ResourceGroupContainerAzure2024","boundingBox":{"x":320,"y":140,"w":1600,"h":1120},"text":"Azure: rg-Alior-POC-minura (presales-001)"})
-cont("regA",620,250,1280,400,"Region A: pod-a-aks, polandcentral (cloud)","#F2F6FC")
-cont("regB",620,720,1280,400,"Region B: pod-b-aks, westeurope (on-prem stand-in)","#F4F9F3")
-S.append({"id":"legend","type":"text","boundingBox":{"x":40,"y":1215,"w":260,"h":110},"text":'<p style="font-size:12px"><b>Alior PoD, L1</b><br><span style="color:#1B7F3B">green</span>: API traffic<br><span style="color:#FF7300">orange</span>: WSO2 control<br><span style="color:#6B4FBB">purple</span>: GitOps (Argo CD + Helm)<br>grey: people, az CLI, database</p>'})
+S.append({"id":"rg","type":"namedContainer","className":"ResourceGroupContainerAzure2024","boundingBox":{"x":320,"y":140,"w":1600,"h":1480},"text":"Azure: rg-Alior-POC-minura (presales-001)"})
+cont("regA",620,250,1280,560,"Region A: pod-a-aks, polandcentral (cloud)","#F2F6FC")
+cont("regB",620,880,1280,560,"Region B: pod-b-aks, westeurope (on-prem stand-in)","#F4F9F3")
+S.append({"id":"legend","type":"text","boundingBox":{"x":40,"y":1575,"w":260,"h":110},"text":'<p style="font-size:12px"><b>Alior PoD, L1</b><br><span style="color:#1B7F3B">green</span>: API traffic<br><span style="color:#FF7300">orange</span>: WSO2 control<br><span style="color:#6B4FBB">purple</span>: GitOps (Argo CD + Helm)<br>grey: people, az CLI, database, metrics</p>'})
 # people + git
 named("consumer","UsersAzure2024",40,290,110,120,"API consumer","app or tester")
 named("developer","UsersAzure2024",1685,10,110,120,"API developer","Publisher UI / REST API, via Front Door")
@@ -40,26 +40,30 @@ named("infra","UsersAzure2024",40,600,110,120,"Infra engineer","Git + az CLI")
 img("gh",GH,200,615,90,90); S.append({"id":"ghT","type":"text","boundingBox":{"x":170,"y":710,"w":150,"h":40},"text":t("GitHub","alior-poc, main")})
 # azure shared
 named("fd","FrontDoorAndCDNProfilesAzure2024",380,300,120,106,"Front Door Premium","TLS + WAF, only public door")
-named("kv","KeyVaultsAzure2024",380,1130,90,90,"Key Vault","AES key, CP token")
+named("kv","KeyVaultsAzure2024",380,1490,90,90,"Key Vault","AES key, CP token")
 # region A
 named("aksA","KubernetesServicesAzure2024",1810,258,70,70,"AKS","")
-wso2box("gwA",C3,280,"API Platform Gateway A","controller + Envoy router")
+wso2box("gwA",C3,280,"API Platform Gateway A","controller + Envoy router, JSON logs to stdout")
 wso2box("cp",C4,280,"APIM 4.7 control plane","Publisher, Dev Portal, Admin")
 argobox("argoA",C2,460,"Argo CD A","pulls main, runs Helm")
 wso2box("opA",C3,460,"WSO2 gateway operator","applies gateway chart 1.2.5",helm=True)
 named("pg","VirtualMachineAzure2024",C4+90,455,120,111,"pod-a-db","PostgreSQL 16 (APIM only)")
 # region B
-named("aksB","KubernetesServicesAzure2024",1810,728,70,70,"AKS","")
-wso2box("gwB",C3,780,"API Platform Gateway B","controller + Envoy router")
-argobox("argoB",C2,960,"Argo CD B","pulls main, runs Helm")
-wso2box("opB",C3,960,"WSO2 gateway operator","applies gateway chart 1.2.5",helm=True)
-named("vm","VirtualMachineAzure2024",C4+90,955,120,111,"pod-b-vm","mock backends v1 / v2 / legacy")
+named("aksB","KubernetesServicesAzure2024",1810,888,70,70,"AKS","")
+wso2box("gwB",C3,940,"API Platform Gateway B","controller + Envoy router, JSON logs to stdout")
+argobox("argoB",C2,1120,"Argo CD B","pulls main, runs Helm")
+wso2box("opB",C3,1120,"WSO2 gateway operator","applies gateway chart 1.2.5",helm=True)
+named("vm","VirtualMachineAzure2024",C4+90,1115,120,111,"pod-b-vm","mock backends v1 / v2 / legacy")
+# observability (phase 3)
+def obsbox(i,x,y):
+    box(i,x,y,"Prometheus + Grafana","kube-prometheus-stack, ns observability","#EDEDED",GREY); img(i+"_helm",HELM,x+W-36,y+8,24,24)
+obsbox("obsA",C2,640); obsbox("obsB",C2,1300)
 # lines
 line("l1","consumer",(1,0.5),"fd",(0,0.5),"API calls, HTTPS")
 line("l2","developer",(0.5,1),"cp",(0.8,0),"deploys APIs",pos=0.6)
 line("l3","fd",(1,0.5),"gwA",(0,0.5),"HTTP 8080 (A)",GREEN)
 line("l4","fd",(0.5,1),"gwB",(0,0.5),"HTTP 8080 (B)",GREEN,pos=0.75)
-line("l5","fd",(0.5,0),"cp",(0.5,0),"portals + Argo UIs via ingress",pos=0.3)
+line("l5","fd",(0.5,0),"cp",(0.5,0),"portals, Argo CD + Grafana UIs via ingress",pos=0.3)
 line("l6","cp",(0,0.5),"gwA",(1,0.5),"WebSocket",ORANGE)
 line("l7","cp",(0,0.8),"gwB",(1,0.5),"WebSocket (B)",ORANGE,pos=0.6)
 line("l8","cp",(0.5,1),"pg",(0.5,0),"JDBC")
@@ -74,5 +78,9 @@ line("l16","argoA",(0.5,0),"cp",(0.15,1),"Helm: helm-apim chart 4.7.0-5",PURPLE,
 line("l17","opA",(0.5,0),"gwA",(0.5,1),"APIGateway CR",ORANGE,pos=0.15,side="bottom")
 line("l18","argoB",(1,0.3),"opB",(0,0.3),"Helm chart",PURPLE)
 line("l19","opB",(0.5,0),"gwB",(0.5,1),"APIGateway CR",ORANGE,pos=0.15,side="bottom")
+line("l20","argoA",(0.5,1),"obsA",(0.5,0),"Helm: kube-prometheus-stack",PURPLE)
+line("l21","gwA",(0,0.8),"obsA",(1,0.5),"metrics :9091 :9003",GREY,pos=0.6)
+line("l22","argoB",(0.5,1),"obsB",(0.5,0),"Helm: kube-prometheus-stack",PURPLE)
+line("l23","gwB",(0,0.8),"obsB",(1,0.5),"metrics :9091 :9003",GREY,pos=0.6)
 doc={"version":1,"pages":[{"id":"p1","title":"L1 user flow","shapes":S,"lines":L}]}
 open("l1-lucid-import.json","w").write(json.dumps(doc)); print(len(json.dumps(doc)))
