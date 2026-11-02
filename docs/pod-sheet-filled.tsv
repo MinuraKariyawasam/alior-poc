@@ -1,0 +1,205 @@
+ID	PoD Scenario / Checklist	Presentation Type	Feasible PoD Demonstration Method	Supplier Comments	Status
+PoD_1	Architecture in Practice	Evidence-Based Presentation	Live on the PoD environment (two AKS clusters, Front Door) plus write-ups		
+PoD_1.1	Deploying the solution on a Kubernetes (K8s) cluster and controlling API calls between applications running within that cluster.		API accounts-internal → in-cluster mock (mock.apps.svc:8080) with basic-auth or jwt-auth; curl pod in the apps namespace calls the gateway runtime ClusterIP with the vhost Host header	tests/pod-1.1.sh: 401 without credentials, 200 with; router access log line	Not started
+PoD_1.2	Deploying the solution on a separate, dedicated Kubernetes (K8s) cluster (or virtual machines) and controlling API calls originating from untrusted zones and targeting API endpoints hosted on another K8s cluster or on standalone systems (e.g. VMs or appliances).		API legacy (/legacy, backend http://10.20.16.4:8083 on pod-b-vm) deployed to pod-b-gw only with one policy; called through Front Door	tests/pod-1.2.sh: 200 with x-mock-version: legacy; VM port not reachable from the Internet (NSG)	Not started
+PoD_1.3	When exposing services to untrusted zones (e.g. the Internet), the ability to protect lower-layer protocols, e.g. TCP/IP using an external IPS/anti-DDoS solution, or HTTP using an external or built-in WAF.		Azure Front Door Premium WAF (OWASP DRS 2.1 + Bot Manager) in Prevention in front of both gateways; Azure infrastructure DDoS protection	tests/gate.sh and make health: injection payload → 403 (2026-10-30)	Done
+PoD_1.4	Ability to deploy the Gateway both on premises (K8s or VMs) and in cloud environments (Azure/GCP).		Same APIGateway CR deployed by the WSO2 gateway operator on both AKS clusters; region B stands in for on-prem; VM/Docker distribution shown from the vendor package	Write-up with the two CRs side by side	In progress
+PoD_1.5	Ability to run multiple cooperating Gateway instances with high availability (HA) and without introducing a single point of failure (SPOF).		Two gateways active-active behind Front Door with health probes; runtime replicas raised to 2 per region for the drills	Drill D1 recording (kill region A pods, traffic continues from B). Control plane is a single instance by agreed PoD scope	In progress
+PoD_1.6	Ability to use an HTTP proxy selectively (e.g. via NO_PROXY or PAC) for outbound connections.		Proxy pod (tinyproxy, logging) in the apps namespace; HTTPS_PROXY/NO_PROXY set on the gateway runtime via chart extraEnv	tests/pod-1.6.sh: proxy log shows the VM call, in-cluster call bypasses it. To confirm: Envoy router honours proxy env vars for upstreams	Not started
+PoD_2	Control Plane and Data Plane Operations	Technical Demonstration	Live in the APIM 4.7 control plane (Publisher, Admin) and Argo CD		
+PoD_2.1	General API Management configuration.		APIM 4.7.0 control plane in region A (wso2-cp), PostgreSQL on pod-a-db, both Platform Gateways registered	Admin portal screenshots → evidence/2.1	Done
+PoD_2.2	Managing Gateways per environment for different systems.		Gateway environments pod-a-gw and pod-b-gw; third environment / labels per system; one API deployed to A only, one to both	tests/pod-2.2.sh: environments and per-API deployments	In progress
+PoD_2.3	Deploying a new Gateway together with API versioning, preferably demonstrated in two scenarios: using the GUI and using an appropriate CI/CD pipeline.		GUI: publish accounts 2.0.0 in the Publisher and deploy (recorded). Pipeline: tests/gate.sh (Publisher REST: import OpenAPI, revision, deploy to both gateways). New gateway: additional APIGateway CR via Argo CD + register.sh	Pipeline path proven 2026-10-30; GUI recording and new-gateway demo pending	In progress
+PoD_2.4	Restricting permissions to a limited group of users per Gateway or system domain.		APIM roles and scope mapping (team can publish to one environment only); Kubernetes RBAC Role limited to the wso2-gw namespace	Denied-action screenshots; kubectl auth can-i output	Not started
+PoD_2.5	Auditing configuration changes, e.g. verifying who added a given route and when.		git log (all platform changes), APIM audit.log (who published what), AKS kube-audit-admin diagnostic logs	One route added → the three log lines	Not started
+PoD_3	Bank-Specific Custom Security Layer	Technical Demonstration	Custom Go policy built with WSO2 Gateway Builder into a custom gateway image (ACR), operator CR pointed at it	Highest-risk block; load profile for 3.6 to be agreed with the Bank	
+PoD_3.1	Reading the entire request and response bodies.		Request and response body hooks in the custom policy	tests/pod-3.sh	Not started
+PoD_3.2	Generating, for example, an MD5 hash from the request and response bodies and logging it.		MD5 computed in the policy and written to the policy/router log	MD5 printed from the log	Not started
+PoD_3.3	Adding a custom header, e.g. X-Status, before returning the response, both for successful responses and for communication errors with the target microservice.		Response hook sets X-Status on success and on upstream failure	Header shown on 200 and on x-mock-status: 500	Not started
+PoD_3.4	"During Gateway startup, retrieving data from an external service, loading it and storing it in memory.
+Then periodically (e.g. every 15 minutes) calling that service and updating the in-memory data.
+If communication fails, the last successfully stored value must remain in memory."		Background goroutine loads from the mock VM at startup, refreshes every 15 min, keeps last good value	Stop the service → value persists	Not started
+PoD_3.5	Until the data has been successfully retrieved from the external service and loaded into memory, the Gateway must return OUT_OF_SERVICE in its health check.		Policy engine readiness gated on the first load (fallback: sidecar + pod readiness probe)	Readiness flips, shown with kubectl	Not started
+PoD_3.6	Latency overhead introduced by integrating the custom security layer.		k6 with the policy on and off (tests/k6)	Region A calls cross the VNet peering (about 25 ms), stated in the write-up	Not started
+PoD_4	API Routing and Addressing	Technical Demonstration	Live on the PoD environment, one proof script per item		
+PoD_4.1	Routing a client (i.e. an application) to a microservice through the Gateway.		API accounts → VM mock v1 through both gateways	Covered by tests/gate.sh; formal check in tests/pod-4.sh	Done in practice
+PoD_4.2	Communication between microservices within a cluster, e.g. using Kubernetes mechanisms.		Same build as 1.1 (in-cluster mock through the gateway)	tests/pod-1.1.sh	Not started
+PoD_4.3	Gateway behavior when the target microservice does not respond and when the configured timeout (30 seconds) expires during communication.		Endpoint timeout 30 s (Publisher endpoint config or router upstream timeout); mock driven with x-mock-delay-ms 35000 / 25000	504 after 30 s, 200 at 25 s. To confirm which timeout key the Platform Gateway honours	Not started
+PoD_4.4	Presenting how communication works in a multi-cluster architecture (implementation in the demo environment is not necessarily required).		Slides with the L0/L1 diagrams	Bank: implementation not required	Slide
+PoD_4.5	DNS support.		Backend referenced by hostname (Private DNS record for pod-b-vm) instead of IP	Router log shows resolution	Not started
+PoD_4.6	Path prefix stripping (strip prefix).		Context /accounts/1.0.0 stripped before the backend (default behaviour)	Mock echoes the backend path	Not started
+PoD_4.7	Route conflicts and priorities, e.g. for microservice URLs /transfers versus /transfers/instant.		/transfers → v1 and /transfers/instant → v2; longest match wins	x-mock-version per path	Not started
+PoD_4.8	Multiple routes to a single microservice.		Two contexts to the same backend	Both 200 from v1	Not started
+PoD_4.9	Sticky sessions (session affinity).		Not available as a Policy Hub policy; checking router-level hash/cookie load balancing	If unavailable: slide	To check
+PoD_5	Traffic Management	Technical Demonstration	Live where the gateway supports it, otherwise slides		
+PoD_5.1	Directing X% of traffic to a new or previous version of a microservice.		Weighted endpoints v1/v2 (Publisher endpoint configuration for the Platform Gateway); k6 confirms the split	To confirm the weighting mechanism	To check
+PoD_5.2	Simulating an error response from a microservice (fault injection — abort) and/or additional response latency (fault injection — delay).		Not available as a Policy Hub policy; the mock backends can simulate abort/delay (x-mock-status, x-mock-delay-ms) but that is backend-side	Likely slide	To check
+PoD_5.3	Ability to stop routing requests to a microservice once its error response rate exceeds a specified threshold (circuit breaking).		Not available as a Policy Hub policy; router outlier detection to be checked	Likely slide	To check
+PoD_5.4	Shifting traffic (traffic shifting) and/or mirroring traffic (traffic mirroring) from one version of a microservice to another.		Shifting: weights of 5.1 changed 90/10 → 50/50 → 0/100 through the Publisher under k6. Mirroring: not available as a Policy Hub policy	Mirroring likely slide	To check
+PoD_6	Gateway Readiness for OpenAPI Requirements	Technical Demonstration	Live with Policy Hub policies and gateway configuration; 6.9 as documentation		
+PoD_6.1	Online storage and retrieval of public certificate contents for each application registered in the Developer Portal.		mtls-auth policy with stored client certificates; Dev Portal application certificates to be checked for the Platform Gateway		To check
+PoD_6.2	Certificate validation against a Certificate Authority (CA) using CRL/OCSP.		CRL/OCSP not available in the current policy catalogue	Likely slide	To check
+PoD_6.3	Using shared functionality for selected APIs, e.g. removing unwanted request/response headers (including the ability to disable platform-specific headers globally or through custom configuration) and enabling or disabling message compression.		remove-headers policy per API and globally; compression via router configuration	Global policy chain and compression to be confirmed	Not started
+PoD_6.4	API parameterization/configuration at the API, Gateway and environment levels.		Policy parameters (API level), gateway values file in Git (gateway level), environment-specific endpoints (environment level); guided demo		Not started
+PoD_6.5	Anonymizing logs, or separating technical logs used for vendor diagnostics from customer logs.		pii-masking-regex policy; two log streams (router access log vs controller technical log); access-log fields configurable	Masked log line	Not started
+PoD_6.6	Ability to forward logs to syslog / Elasticsearch.		Gateway writes JSON to stdout (router access log + controller log); Kubernetes captures it; any shipper forwards to syslog/Elasticsearch (Fluent Bit reference config from WSO2)	Samples in evidence/6.6 (2026-11-02). Demo shipper (Fluent Bit → syslog) or slide to be decided	In progress
+PoD_6.7	Ability to apply a custom error-handling policy to a group of APIs.		respond policy with a standard error body on the fault flow, attached to a group of APIs	Fault-flow attachment on the Platform Gateway to be confirmed	Not started
+PoD_6.8	Ability to run custom modules/plugins globally and apply them selectively, e.g. by directory, domain, etc.		PoD 3 custom policy attached to one API, then globally	Global attachment mechanism to be confirmed	Not started
+PoD_6.9	Providing the required solution upgrade procedure, including documentation and any additional process requirements.		docs/upgrade.md: operator chart bump, APIM chart bump, order (control plane first, then gateways per region), rollback by Git revert, WSO2 Updates		Not started
+PoD_6.10	Availability and configurability of SQL injection protection mechanisms, including how to use them and their performance impact.		Front Door WAF (already blocks SQL injection with 403) plus regex-guardrail on the gateway; k6 with and without	WAF proven; performance run pending	In progress
+PoD_6.11	Ability to use an OAuth2 server provided with the offered product and apply its mechanisms to selected APIs.		APIM Resident Key Manager (OAuth2 server) + Policy Hub jwt-auth 1.3 on accounts-secure; gateway trusts the control plane issuer/JWKS	make test POD=6.11 PASSED 2026-11-02: 401 without/bad token, 200 with token, both gateways via Front Door (evidence/6.11)	Done
+PoD_6.12	Ability to verify JWS signatures and validate messages using stored certificates.		JWS verification not available in the current policy catalogue; custom policy or slide		To check
+PoD_7	Logs and Monitoring Metrics	Technical Demonstration	Live: Prometheus + Grafana per cluster		
+PoD_7.1	Logs and monitoring metrics for each layer, including the control plane, data plane, etc.		Gateway controller and policy engine metrics scraped by Prometheus in each cluster; WSO2 Grafana dashboards (Gateway Controller, Policy Engine, Infrastructure Overview); pod metrics from kubelet; JSON logs on stdout	make test POD=7.1 PASSED 2026-11-02 (evidence/7.1). Control plane metrics can be added (APIM Prometheus endpoint)	Done
+PoD_7.2	Integration with tools used by the Bank, e.g. Grafana, including OpenTelemetry support.		Grafana at /grafana on the Front Door UI endpoints, dashboards loaded from Git; OpenTelemetry tracing export available in the gateway ([tracing] to an OTel collector), not deployed	Grafana proven; OTel on request	Done
+PoD_8	Gradual Migration of Microservices to a New Gateway	Technical Demonstration	Live with Front Door and k6		
+PoD_8.1	Method for gradually migrating microservices to a new Gateway, transparently to the client system calling the target microservice through the Gateway.		Legacy NGINX as a second Front Door origin group; routes moved to the WSO2 gateways one path at a time by Front Door route patterns; client URL unchanged	k6 against the same URL during the move, zero errors	Not started
+PoD_9	PSD2 and Open Banking Requirements	Evidence-Based Presentation	Existing WSO2 Open Banking demo environment	Out of scope for the PoD build repository	Existing demo
+PoD_9.1	Support for eIDAS certificates.		Existing WSO2 demo environment		Existing demo
+PoD_9.2	End-to-end mutual TLS (mTLS).		Existing WSO2 demo environment		Existing demo
+PoD_9.3	Integration with Consent Management.		Existing WSO2 demo environment		Existing demo
+PoD_9.4	Separate Sandbox environments with dedicated, Internet-facing Developer Portals.		Existing WSO2 demo environment		Existing demo
+PoD_9.5	Third-party provider (TPP) registration through the Developer Portal.		Existing WSO2 demo environment		Existing demo
+PoD_9.6	An audit trail compliant with regulatory requirements.		Existing WSO2 demo environment		Existing demo
+PoD_10	High Availability and Disaster Recovery Approach	Evidence-Based Presentation	Live demo + recordings; docs/dr.md		
+PoD_10.1	Presenting the Disaster Recovery (DR) approach, including configuration of a secondary site and methods for backing up and restoring Gateway and Control Plane configurations.		docs/dr.md: PostgreSQL backup/restore of the control plane, full rebuild from Git (Argo CD); live: wipe the region B gateway namespace and rebuild	Recording	Not started
+PoD_10.2	Presenting general HA mechanisms, including an example of scaling the Gateway from 4 to 8 instances.		HPA on the region A gateway runtime, k6 load, 4 → 8 pods in Grafana	Node pool sized for the drill	Not started
+PoD_11	Compliance with the OWASP API Security Top 10	Technical Demonstration	Live with Policy Hub policies, gateway configuration and Front Door WAF		
+PoD_11.1	API2 — Broken Authentication				
+PoD_11.1.1	"Ability to secure endpoints and define different authentication requirements for different endpoints, using:
+- Basic Authentication
+- OAuth2/OIDC integration (e.g. Entra ID), JWT
+- mTLS
+For example, a policy validating:
+- JWT signature using public keys (JWKS)
+- Issuer (IdP)
+- Audience (endpoint)
+- Token validity dates"		basic-auth, jwt-auth (JWKS, issuer, audience, expiry) and mtls-auth policies attached per operation; Entra ID as a second key manager entry once the app registration exists	JWT with the Resident Key Manager proven (6.11); Entra ID pending app registration	In progress
+PoD_11.1.2	"Brute-force protection:
+- Rate limiting (by API key, user or OAuth token)
+- Spike arrest / throttling
+- Monitoring and alerting (SIEM integration)"		basic-ratelimit / advanced-ratelimit keyed on API key, user claim or token, with burst (spike arrest); Prometheus alert rule; SIEM via the stdout JSON logs	429 after N calls; alert fired	Not started
+PoD_11.2	API4 — Unrestricted Resource Consumption				
+PoD_11.2.1	Per-service size limits — sending a file or payload that exceeds the permitted limit.		content-length-guardrail policy	413 over the limit	Not started
+PoD_11.2.2	"Per-service JSON threat protection:
+- Maximum nesting depth
+- Number of fields
+- Number of array elements
+- Value length"		json-schema-guardrail policy with a schema bounding depth, properties, array size and string length	Pure depth limit to be confirmed	Not started
+PoD_11.2.3	"Per-service XML threat protection:
+- Number of elements
+- Number of attributes
+- Number of entities"		XML threat protection not available in the current policy catalogue	Slide or custom policy	To check
+PoD_11.2.4	"Rate limiting / quota:
+- Per-API policy
+- Per-endpoint policy
+- Per-business-operation policy
+Validation of parameters affecting backend load:
+- Limits for parameters such as limit, pageSize and depth
+- Ability to block or override parameter values through a policy"		Rate-limit policies at API and operation level; parameter caps with regex-guardrail / url-guardrail on limit and pageSize; override via request-rewrite	Override capability to be confirmed	Not started
+PoD_11.3	API6 — Unrestricted Access to Sensitive Business Flows				
+PoD_11.3.1	"Ability to control access to selected endpoints, methods or properties using:
+- Request sequence control (flow control)
+- Blocking automated requests, e.g. from a headless browser
+- CAPTCHA mechanism
+- Detection of non-human behavior"		Front Door WAF Bot Manager and rate rules for automated traffic and non-human behaviour; CAPTCHA and request-sequence control are not gateway features	Flow control: slide	Gap (WAF covers bots)
+PoD_11.4	API7 — Server-Side Request Forgery				
+PoD_11.4.1	Detection of attempted SSRF requests, e.g. requests targeting 169.254.169.254, localhost or 127.0.0.1.		url-guardrail / regex-guardrail on the request target for 169.254.169.254, localhost, 127.0.0.1; fallback: the PoD 3 custom policy	400 on the SSRF payload	Not started
+PoD_11.5	API8 — Security Misconfiguration				
+PoD_11.5.1	Enforcing TLS versions and cipher suites.		Front Door TLS policy (minimum TLS 1.2) and the gateway router downstream TLS settings	openssl s_client: TLS 1.0/1.1 refused	Not started
+PoD_11.5.2	"HTTP method filtering:
+- Allowed: GET, POST
+- Blocked: PUT, DELETE, TRACE, etc.
+- Return HTTP 405 Method Not Allowed"		Methods not defined on the API are rejected by the router; respond policy if the code must be 405	PUT/DELETE/TRACE on accounts	Not started
+PoD_11.5.3	"CORS enforcement:
+- Central CORS policy configuration
+- Policy inheritance"		cors policy, same configuration reused on several APIs	Preflight response headers	Not started
+PoD_11.5.4	"Security headers:
+- Strict-Transport-Security
+- X-Content-Type-Options
+- X-Frame-Options
+- Content-Security-Policy"		set-headers policy on the response flow (HSTS, X-Content-Type-Options, X-Frame-Options, CSP)	Headers present	Not started
+PoD_11.5.5	"Content-Type restrictions:
+- Allowed content types
+- Reject disallowed content types (HTTP 415 Unsupported Media Type)"		regex-guardrail on Content-Type plus respond 415	To confirm	To check
+PoD_11.5.6	"Header transformation:
+- Remove Server and X-Powered-By headers
+- Add standard security headers"		remove-headers (Server, X-Powered-By) and set-headers	Headers removed / added	Not started
+PoD_11.5.7	"Error response sanitization:
+- Hide stack traces, application exceptions and backend implementation details
+- Hide information about technologies used (e.g. Spring, .NET, Tomcat, Oracle)
+- Remove hostnames, private IP addresses, environment names and other infrastructure details
+- Detect and limit exposure of sensitive information in API responses and OpenAPI/Swagger specifications
+- Return standardized error messages that do not provide useful information to a potential attacker"		respond policy on the fault flow with a standardized error body (shared with 6.7)	Backend stack trace never reaches the client	Not started
+PoD_11.6	API9 — Improper Inventory Management				
+PoD_11.6.1	"API inventory:
+- Unknown APIs
+- Old API versions
+- Shadow APIs
+- Zombie APIs
+- Endpoints outside the API management process"		Publisher inventory of all APIs with lifecycle state; gateway API list compared with the Publisher	Discovery of unknown/shadow endpoints is not a Platform Gateway feature	To check
+PoD_11.6.2	"API versioning:
+- Version identification
+- Marking APIs as deprecated
+- API lifecycle management"		Publisher lifecycle (Created → Published → Deprecated → Retired) on accounts 1.0.0 vs 2.0.0	Lifecycle screenshots	Not started
+PoD_11.6.3	"API usage visibility:
+- API consumers
+- Activity by API version
+- Identification of unused APIs"		Prometheus policy_engine_requests_total by route and Grafana; per-consumer usage needs APIM analytics or the access-log subject	To confirm per-consumer label	To check
+PoD_12	Data Processing Model in Hybrid/Cloud Environments	Evidence-Based Presentation	Slides based on the PoD environment		
+PoD_12.1	Mapping data flows and data locations.		L0/L1 diagrams: PostgreSQL in region A, SQLite on the gateways, logs on stdout, Key Vault		Slide
+PoD_12.2	Just-in-time management of service/support access.		Azure PIM for just-in-time access; Key Vault for secrets		Slide
+PoD_12.3	Encryption using Bank-owned keys and key rotation.		Key Vault (bank-owned keys), gateway AES encryption keys, APIM encryption key, rotation procedure		Slide
+PoD_12.4	Separation of two tenants or system domains.		APIM organisations/tenants and separate gateways per domain (see 2.2)		Slide
+PoD_13	Integration with External AI APIs	Technical Demonstration	Existing WSO2 AI Gateway demo environment	Out of scope for the PoD build repository	Existing demo
+PoD_13.1	Presenting how the solution can operate as an AI Gateway, providing controlled access for the Bank’s applications, agents and processes to multiple AI models from different providers, as well as models hosted on the Bank’s own infrastructure.		Existing WSO2 demo environment		Existing demo
+PoD_13.2	Demonstrating centralized configuration of connections to at least two different models or providers, and exposing them to applications through a common interface, without creating a permanent dependency on a single provider’s API.		Existing WSO2 demo environment		Existing demo
+PoD_13.3	Presenting model routing based on availability, cost, performance, data classification, location, use case and model approval status, including controlled fallback to another model if the primary model does not respond.		Existing WSO2 demo environment		Existing demo
+PoD_13.4	Presenting rate-limiting mechanisms and cost/token usage accounting for each model, application, agent, user and use case. Limits should cover request counts, input tokens, output tokens, total tokens, concurrent connections and cost.		Existing WSO2 demo environment		Existing demo
+PoD_13.5	Masking sensitive data in prompts.		Existing WSO2 demo environment		Existing demo
+PoD_13.6	Logging prompts and responses.		Existing WSO2 demo environment		Existing demo
+PoD_14	AI Gateway Security Requirements	Evidence-Based Presentation	Existing WSO2 AI Gateway demo environment, scenarios with screenshots	Out of scope for the PoD build repository	Existing demo
+PoD_14.1	"Detailed filtering of LLM token usage (input and output), e.g. by tenant, team, workflow, user, model provider and model type.
+
+Example scenario: Make 10 LLM calls through the Gateway, then test the available filters (screenshot)."		Existing WSO2 demo environment		Existing demo
+PoD_14.2	"Ability to set token limits per tenant, team, workflow, user, model provider and model type.
+
+Scenario: Set token limits per model, provider, user and team. Then send two requests for each use case: one below the limit and one above it (screenshot showing the request being blocked)."		Existing WSO2 demo environment		Existing demo
+PoD_14.3	"Ability to authenticate every application, agent and user calling a model.
+
+Scenario: Test environment with three agents and several test users; potential integration with Entra ID (OAuth2/OIDC, JWT). Verify a policy that enforces attributes contained in token claims (agent, user, etc.)."		Existing WSO2 demo environment		Existing demo
+PoD_14.4	"Ability to integrate with services such as Key Vault to retrieve AI credentials.
+
+Scenario: Configure the AI Gateway with a model hosted in Azure OpenAI. Store the API key in Key Vault and attempt to call the model through the Gateway (screenshot showing the Gateway call to Key Vault)."		Existing WSO2 demo environment		Existing demo
+PoD_14.5	"Access authorization for each model must be enforced per tenant, application, agent, model and operation (AI Gateway as a Policy Enforcement Point).
+
+Scenario: Verify that the Gateway can act as a Policy Enforcement Point and block unauthorized operations, for example:
+- Agent X | GPT-4o | chat
+- Agent Y | GPT-4o | embeddings
+- Agent Z | GPT-4.1 | chat"		Existing WSO2 demo environment		Existing demo
+PoD_14.6	"Semantic guardrails against prompt injection attempts (LLM-as-a-guard).
+
+Scenario: Tests covering instruction override, attempted data exfiltration, indirect prompt injection (a document containing hidden instructions, both plain text and encoded), etc. Consider preparing a larger test suite and benchmark."		Existing WSO2 demo environment		Existing demo
+PoD_14.7	Ability to configure validation and sanitization of inputs and outputs, with reporting (e.g. removing characters, filtering/masking patterns, PII and secrets, and enforcing JSON output format).		Existing WSO2 demo environment		Existing demo
+PoD_14.8	"Content filtering (responsible AI, including prohibited topics such as toxicity, harm, etc.).
+
+Scenario: Verify the mechanism with a set of prompts from different categories."		Existing WSO2 demo environment		Existing demo
+PoD_14.9	"Integration with a kill-switch mechanism that immediately blocks new requests and, where technically possible, terminates active requests for a specified agent, tenant, model, provider or the entire agent-based system.
+
+Scenario: Configure an AI agent that regularly queries an LLM. Test whether the kill switch stops the agent and blocks access to the model or provider."		Existing WSO2 demo environment		Existing demo
+PoD_14.10	Support for short-lived capability tokens (tokens for agents restricting available models, operations, budget, time and data classification), with the AI Gateway acting as a Policy Enforcement Point.		Existing WSO2 demo environment		Existing demo
+PoD_14.11	"Ability to rate-limit model calls per tenant, team, workflow and user.
+
+Scenario: Verify the token usage limiting mechanism, define a quota with blocking enforcement and generate an alert when a specified threshold is exceeded."		Existing WSO2 demo environment		Existing demo
+PoD_14.12	Ability to configure alerts for unusual increases in token usage/consumption (anomaly rules).		Existing WSO2 demo environment		Existing demo
+PoD_14.13	Ability to configure alerts for anomalous user requests (anomaly rules).		Existing WSO2 demo environment		Existing demo
+PoD_14.14	"Ability to configure prompt templates, version prompts and control user input length.
+
+Scenario: Configure a prompt template on the Gateway, e.g. ""write a poem about <user input>"", and a user-input length limit. Test prompts below and above the limit (screenshots from logs). Verify the ability to save different prompt versions."		Existing WSO2 demo environment		Existing demo
+PoD_14.15	Ability to integrate and configure access control and enforce tool-call policies between AI agents and MCP servers.		Existing WSO2 demo environment		Existing demo
+PoD_14.16	Ability to log and enforce authentication and authorization (AuthN/AuthZ) for Agent-to-Agent (A2A protocol) and Agent-to-Tool traffic.		Existing WSO2 demo environment		Existing demo
+PoD_15	API Management Evolution and Future Capabilities	Evidence-Based Presentation	Slides backed by drill recordings		
+PoD_15.1	Presenting a model in which API Management serves as a central logical layer for managing traffic to services running across multiple Kubernetes clusters, on-premises environments, public clouds and traditional systems supported by dedicated Gateways, ingress controllers and load balancers.		L0 diagram and the gateway-operator story (one control plane, gateways anywhere)		Slide
+PoD_15.2	Describing the Control Plane and Data Plane architecture, centralized management of multiple distributed Gateways, and Gateway behavior during a temporary loss of connectivity to the management layer.		Control plane / data plane architecture; drill D2 recording (control plane down, runtimes keep serving)	Note: a gateway controller restart currently needs the control plane to redeploy APIs (finding 2026-11-02); workaround documented	In progress
+PoD_15.3	Presenting integration capabilities with Service Mesh solutions, including the division of responsibilities between API Gateway and Service Mesh, ingress and egress handling, service information exchange, policy management, and the impact on security, performance and operational complexity.		Slide: gateway vs service mesh responsibilities		Slide
+PoD_15.4	Presenting the approach to high availability, scaling, Disaster Recovery and degraded-mode operation in the event of a cluster or region failure, loss of connectivity between on-premises infrastructure and the cloud, or failure of the central management layer.		Drills D1, D3, D5, D6 recordings; 10.1 and 10.2 evidence		Slide
