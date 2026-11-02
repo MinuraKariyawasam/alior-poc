@@ -51,7 +51,9 @@ Attach path verified on 2026-11-02: the Publisher accepts a policy name that is 
 with `policyId name::version`, stored as its own record), the control plane pushes it, and the gateway controller
 validates it against the policy definitions loaded from the image ("policy 'pod-custom-test' major version 'v1' not found in
 loaded policy definitions" → deployment rejected). So a policy compiled into the gateway image with its
-`policy-definition.yaml` can be attached top-down from the Publisher; no Hub publication needed. The remaining build
+`policy-definition.yaml` can be attached top-down from the Publisher; no Hub publication needed. UI check 2026-11-02: an attached custom policy shows on the API's Policies page as a chip with a delete icon (display name
+comes from the Hub, so only an initial is shown); it cannot be added from the Policy List, which is the Hub catalogue.
+Attach by pipeline (REST), manage in the UI. Private Hub endpoint = question for Gihan. The remaining build
 question is only the Gateway Builder image pipeline. The same path serves the extra policies decided on 2026-11-02 if the
 scope is accepted: 5.2 fault injection, 11.2.3 XML threat protection, 11.5.5 Content-Type 415, 6.12 JWS, 5.4 mirroring
 (policy-layer copy), 5.3 circuit breaker (per-pod state, caveat). 4.9 and 6.2 stay router/slide questions.
