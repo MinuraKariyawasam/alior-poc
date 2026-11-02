@@ -69,6 +69,7 @@ write-ups with the evidence collected above, `evidence/` complete for every live
 
 ## Small items to close in passing
 
+- Ask WSO2 (via Gihan) whether gateway 1.2.x has an outbound proxy setting for the controller, policy engine and router: HTTPS_PROXY/NO_PROXY env is ignored (PoD 1.6 finding, 2026-11-02).
 - Switch the UI WAF `podwafui` to Prevention after a login pass.
 - Change the gateway controller admin password from the chart default.
 - Decide live syslog demo or slide for 6.6.
