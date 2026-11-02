@@ -1,4 +1,4 @@
-# WSO2 API Platform gateway operator 0.11.4 (pins gateway chart 1.2.5). Installs Gateway API CRDs.
+# WSO2 API Platform gateway operator 0.11.4, pointed at gateway chart 2026.10.0 from registry.wso2.com (default pin was 1.2.5). Installs Gateway API CRDs.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -14,6 +14,11 @@ spec:
       releaseName: gateway-operator
       valuesObject:
         nodeSelector: {agentpool: work}
+        gateway:
+          helm:                                # fixed gateway release (controller restart no longer drops deployed APIs), from WSO2's Harbor; decided 2026-11-02
+            chartName: oci://registry.wso2.com/wso2-api-platform/sts/helm-charts/gateway
+            chartVersion: "2026.10.0"          # pins images registry.wso2.com/wso2-api-platform/sts/gateway-{controller,runtime}:2026.10.0
+            registryCredentialsSecret: {name: harbor-registry, namespace: wso2-gw}   # platform/gateway/harbor-secret.sh
   destination: {server: https://kubernetes.default.svc, namespace: wso2-gw}
   syncPolicy:
     automated: {prune: true, selfHeal: true}

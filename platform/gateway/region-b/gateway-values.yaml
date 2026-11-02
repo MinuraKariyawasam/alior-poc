@@ -1,4 +1,4 @@
-# Overlay on the operator's default gateway chart (1.2.5) values for pod-b-gw. Deep-merged by the operator.
+# Overlay on the operator's default gateway chart (2026.10.0 from registry.wso2.com) values for pod-b-gw. Deep-merged by the operator.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,6 +6,9 @@ metadata:
   namespace: wso2-gw
 data:
   values.yaml: |
+    wso2:
+      subscription:
+        imagePullSecret: harbor-pull         # images come from registry.wso2.com (chart 2026.10.0); Secret from platform/gateway/harbor-secret.sh
     gateway:
       config:
         controller:
