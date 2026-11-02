@@ -19,7 +19,7 @@ data:
           storage:
             type: sqlite
             sqlite:
-              path: /app/data/gateway.db
+              path: /app/data/gateway-v6.db          # fresh file for controller 2026.10.0 (schema 6; it refuses the 1.2.0 schema-4 file, which stays on the disk)
           logging:
             level: info
             format: json
@@ -50,7 +50,7 @@ data:
             key: token
         storage:
           type: sqlite
-          sqlitePath: /app/data/gateway.db  # must be absolute: the container has no working directory, so ./data does not exist
+          sqlitePath: /app/data/gateway-v6.db  # must be absolute: the container has no working directory, so ./data does not exist
         encryptionKeys:
           enabled: true                    # mandatory, fail-closed; Secret created by platform/gateway/secrets.sh
           secretName: gateway-encryption-keys
