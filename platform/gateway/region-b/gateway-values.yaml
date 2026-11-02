@@ -27,6 +27,15 @@ data:
           access_logs:
             enabled: true
             format: json
+        policy_configurations:
+          jwtauth_v1:
+            keymanagers:                   # read by the Policy Hub jwt-auth policy: trust tokens issued by our control plane (PoD 6.11)
+              - name: apim-resident
+                issuer: https://am.wso2.com:443/oauth2/token
+                jwks:
+                  remote:
+                    uri: https://10.10.0.6:9443/oauth2/jwks
+                    skipTlsVerify: true    # the control plane runs on the chart's self-signed certificate
       controller:
         metrics:
           enabled: true                    # Prometheus /metrics on :9091 (PoD 7.1); chart-level key, the template reads .Values.gateway.controller.metrics
