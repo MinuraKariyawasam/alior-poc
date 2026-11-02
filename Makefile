@@ -1,4 +1,4 @@
-.PHONY: quota infra idle resume destroy argocd argocd-status frontdoor frontdoor-ui lockdown gate health tags test grafana-secret
+.PHONY: quota infra idle resume destroy argocd argocd-status frontdoor frontdoor-ui lockdown gate health tags test grafana-secret redeploy-all
 quota:   ; @for r in polandcentral westeurope; do echo "== $$r"; az vm list-usage -l $$r -o table | grep -E "Total Regional vCPUs|Standard DSv5|Standard BS"; done
 infra:   ; bash infra/azure/build.sh
 idle:    ; bash infra/azure/scale.sh idle
@@ -14,3 +14,4 @@ tags:      ; bash infra/azure/tags.sh
 health:    ; bash tests/health.sh
 test:      ; bash tests/pod-$(POD).sh          # make test POD=7.1
 grafana-secret: ; bash platform/observability/grafana-secret.sh
+redeploy-all: ; bash tests/redeploy-all.sh      # after a gateway re-render: new revision of every API to its gateways

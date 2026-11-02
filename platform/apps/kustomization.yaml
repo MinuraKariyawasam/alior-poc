@@ -3,8 +3,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: apps
-resources: [mock.yaml]
+resources: [mock.yaml, proxy.yaml]
 generatorOptions: {disableNameSuffixHash: true}
 configMapGenerator:
   - name: mock-py
     files: [mock.py]
+  - name: proxy-py
+    files: [proxy.py]
