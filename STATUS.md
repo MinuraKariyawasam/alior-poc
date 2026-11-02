@@ -1,6 +1,6 @@
 # STATUS
 
-Source list: `docs/pod-checklist.tsv` (the bank's PoD sheet). States: Not started / In progress / Done / Blocked / Slide. Updated whenever a task changes state (ground rule 8).
+Source list: `docs/pod-checklist.tsv` (the bank's PoD sheet). Per-item guide (ask, status, how we do it here, proof): `docs/pod-guide.md`. Order of work: `docs/plan-next.md`. States: Not started / In progress / Done / Blocked / Slide. Updated whenever a task changes state (ground rule 8).
 Base platform (phases 1 to 3) is up: `make health`, `make gate`, `make test POD=7.1`, `make test POD=6.11`. PoD 9, 13 and 14 use existing demo environments (out of scope for this repo).
 
 | PoD | Item | Mode | State | Proof / note |

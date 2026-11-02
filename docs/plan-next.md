@@ -1,5 +1,7 @@
 # What to do next (written 2026-11-02, after phases 1 to 3 and PoD 6.11)
 
+Per-item detail (what it asks, where we stand, how we do it in this setup, proof): `docs/pod-guide.md`.
+
 Out of scope here: PoD 9 (Open Banking), 13 and 14 (AI Gateway), which use the existing demo environments.
 Policy Hub catalogue checked on 2026-11-02 (71 policies); "CHECK" means no catalogue policy covers it, so the item is
 proven differently, marked `slide`, or reported as a gap (ground rule 2). One PoD item per commit, one `tests/pod-X.sh`
