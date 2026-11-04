@@ -1,8 +1,12 @@
-.PHONY: quota infra idle resume destroy argocd argocd-status frontdoor frontdoor-ui lockdown gate health tags test grafana-secret redeploy-all harbor-secret drill
+.PHONY: quota infra idle resume stop start power-status schedule destroy argocd argocd-status frontdoor frontdoor-ui lockdown gate health tags test grafana-secret redeploy-all harbor-secret drill
 quota:   ; @for r in polandcentral westeurope; do echo "== $$r"; az vm list-usage -l $$r -o table | grep -E "Total Regional vCPUs|Standard DSv5|Standard BS"; done
 infra:   ; bash infra/azure/build.sh
-idle:    ; bash infra/azure/scale.sh idle
+idle:    ; bash infra/azure/scale.sh idle          # lighter: worker pools to 0 only
 resume:  ; bash infra/azure/scale.sh resume
+stop:    ; bash infra/azure/power.sh stop          # whole PoD off: AKS clusters stopped, VMs deallocated
+start:   ; bash infra/azure/power.sh start
+power-status: ; bash infra/azure/power.sh status
+schedule: ; bash infra/azure/schedule.sh          # office-hours automation: start 09:00 / stop 17:00 Mon-Fri (Asia/Colombo)
 destroy: ; bash infra/azure/destroy.sh
 argocd:  ; bash platform/argocd/bootstrap.sh a && bash platform/argocd/bootstrap.sh b
 argocd-status: ; @for c in pod-a-aks pod-b-aks; do echo "== $$c"; kubectl --context $$c -n argocd get applications; done
