@@ -7,12 +7,12 @@ set -euo pipefail
 cd "$(dirname "$0")" && source ./env.sh
 case "${1:-}" in
   stop)
-    for c in pod-a-aks pod-b-aks; do az aks stop -g "$RG" -n "$c" --no-wait -o none && echo "$c stopping"; done
-    for v in pod-a-db pod-b-vm; do az vm deallocate -g "$RG" -n "$v" --no-wait -o none && echo "$v deallocating"; done
+    for c in pod-a-aks pod-b-aks; do az aks stop -g "$RG" -n "$c" --no-wait -o none --only-show-errors 2>/dev/null && echo "$c stopping" || echo "$c: not running or busy"; done
+    for v in pod-a-db pod-b-vm; do az vm deallocate -g "$RG" -n "$v" --no-wait -o none --only-show-errors 2>/dev/null && echo "$v deallocating" || echo "$v: already off or busy"; done
     ;;
   start)
-    for v in pod-a-db pod-b-vm; do az vm start -g "$RG" -n "$v" --no-wait -o none && echo "$v starting"; done
-    for c in pod-a-aks pod-b-aks; do az aks start -g "$RG" -n "$c" --no-wait -o none && echo "$c starting"; done
+    for v in pod-a-db pod-b-vm; do az vm start -g "$RG" -n "$v" --no-wait -o none --only-show-errors 2>/dev/null && echo "$v starting" || echo "$v: already running or busy"; done
+    for c in pod-a-aks pod-b-aks; do az aks start -g "$RG" -n "$c" --no-wait -o none --only-show-errors 2>/dev/null && echo "$c starting" || echo "$c: already running or busy"; done
     ;;
   status)
     for c in pod-a-aks pod-b-aks; do printf '%-10s %s\n' "$c" "$(az aks show -g "$RG" -n "$c" --query powerState.code -o tsv --only-show-errors)"; done
