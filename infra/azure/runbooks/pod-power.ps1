@@ -14,11 +14,11 @@ function Post($path) {
 $aksOp = @{ stop = "stop"; start = "start" }[$Action]
 $vmOp  = @{ stop = "deallocate"; start = "start" }[$Action]
 if ($Action -eq "stop") {
-  foreach ($c in $aks) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.ContainerService/managedClusters/$c/$aksOp?api-version=AKS_API" }
-  foreach ($v in $vms) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Compute/virtualMachines/$v/$vmOp?api-version=VM_API" }
+  foreach ($c in $aks) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.ContainerService/managedClusters/$c/${aksOp}?api-version=AKS_API" }
+  foreach ($v in $vms) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Compute/virtualMachines/$v/${vmOp}?api-version=VM_API" }
 } else {
-  foreach ($v in $vms) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Compute/virtualMachines/$v/$vmOp?api-version=VM_API" }
+  foreach ($v in $vms) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Compute/virtualMachines/$v/${vmOp}?api-version=VM_API" }
   Start-Sleep -Seconds 60   # let Postgres come up before APIM's pods are scheduled
-  foreach ($c in $aks) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.ContainerService/managedClusters/$c/$aksOp?api-version=AKS_API" }
+  foreach ($c in $aks) { Post "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.ContainerService/managedClusters/$c/${aksOp}?api-version=AKS_API" }
 }
 Write-Output "pod-power $Action requested at $(Get-Date -Format u)"
