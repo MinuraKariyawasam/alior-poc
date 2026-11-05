@@ -49,7 +49,7 @@ There is no Terraform state. The approved sizing, prices and `az` build commands
 - Node floor: B2s system nodes; region A two D4s_v5 (one tainted `wso2cp=true:NoSchedule` for APIM), region B one D4s_v5. The 4 CPU size is driven by APIM's 2 CPU Helm request.
 - Gateway controllers keep the chart's in-cluster SQLite. Only APIM gets PostgreSQL: PostgreSQL 16 on `pod-a-db`, a B1ms VM in region A, because Azure Database for PostgreSQL Flexible Server refuses every SKU in polandcentral on this subscription (verified 2026-10-30). External Postgres for controllers was considered and declined.
 - Front Door Premium stays, because PoD 1.3 needs its managed WAF rules.
-- Cost: 1,123 USD/month running, 534 idle, two-month ceiling 2,250 USD. Idle means the worker pools are scaled to zero by hand on days with no build work or demo; nothing is deleted.
+- Cost: 1,123 USD/month running, 534 idle, two-month ceiling 2,250 USD. Idle means the worker pools are scaled to zero by hand on days with no build work or demo; nothing is deleted. Since 2026-11-04 the whole PoD is stopped automatically outside 09:00 to 17:00 Mon-Fri (Asia/Colombo) by Azure Automation (`docs/office-hours.md`, `make stop`/`make start` by hand).
 - GitOps (decided 2026-10-30, see `docs/phase2-platform.md`): one Argo CD per cluster in `argocd`, each watching this repo on `main`. Argo CD deploys the platform from Helm charts; the APIM control plane deploys the APIs. Argo CD itself is the only hand-run Helm install. Pinned: argo-cd chart 10.11.6 (app v3.5.6).
 - Gateways (decided 2026-10-30, upgraded 2026-11-02): deployed by the WSO2 gateway operator (chart gateway-operator 0.11.4, pointed at gateway chart 2026.10.0 from `registry.wso2.com/wso2-api-platform/sts` instead of its default 1.2.5; images 2026.10.0 pinned in the overlays, pull Secrets from `make harbor-secret`), one `APIGateway` CR per cluster in `wso2-gw`, with cert-manager v1.19.1 as its listener-TLS prerequisite. The operator needs an AES-256 key Secret per gateway namespace (`platform/gateway/secrets.sh`, key kept in Key Vault) and a control plane token Secret (`platform/gateway/register.sh`).
 - Front Door to gateways (decided 2026-10-30): plain HTTP on 8080 inside Azure, TLS and WAF terminate at Front Door, because Front Door rejects the gateways' self-signed certificates. Switch the route to HttpsOnly once the gateways carry CA-issued certificates.
@@ -104,7 +104,9 @@ STATUS.md                 # live status per PoD ID
 
 ```
 make infra                       # infra/azure/build.sh, rerunnable
-make idle / make resume          # worker pools to 0 / back to 1
+make idle / make resume          # worker pools to 0 / back to 1 (lighter option)
+make stop / make start           # whole PoD off/on: AKS clusters stopped, VMs deallocated (docs/office-hours.md)
+make schedule                    # Azure Automation: start 09:00, stop 17:00 Mon-Fri, Asia/Colombo; weekends off
 make argocd-sync                 # platform
 make test POD=4.7                # run one PoD proof
 make drill D=2                   # run a failure drill
