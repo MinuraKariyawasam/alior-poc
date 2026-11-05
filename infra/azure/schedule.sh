@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")" && source ./env.sh
 TZ_NAME=${TZ_NAME:-Asia/Colombo}; START_AT=${START_AT:-09:00}; STOP_AT=${STOP_AT:-17:00}
-AA=pod-automation; LOC=$LOC_A; API=2024-10-23; AKS_API=${AKS_API:-2026-09-01}; VM_API=${VM_API:-2026-04-01}
+AA=pod-automation; LOC=$LOC_A; API=2024-10-23; AKS_API=${AKS_API:-2026-04-02-preview}; VM_API=${VM_API:-2026-04-01}
 SUBID=$(az account show --query id -o tsv)
 BASE="https://management.azure.com/subscriptions/$SUBID/resourceGroups/$RG/providers/Microsoft.Automation/automationAccounts/$AA"
 tagsjson=$(python3 -c 'import sys,json; print(json.dumps(dict(kv.split("=",1) for kv in sys.argv[1].split())))' "$TAGS")
